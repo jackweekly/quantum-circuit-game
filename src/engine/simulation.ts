@@ -15,6 +15,20 @@ const processedLog = new Map<string, true>()
 let spawnTimer = 0
 const SPAWN_RATE = 4000
 
+function findExitDirection(x: number, y: number, tileDir?: Direction): Direction | undefined {
+  if (tileDir) return tileDir
+  // Prefer a conveyor in front of the gate: look at right, left, up, down for a belt pointing away
+  const directions: Direction[] = ['east', 'west', 'north', 'south']
+  for (const dir of directions) {
+    const vec = DIR_VECTORS[dir]
+    const neighbor = worldGrid.get(x + vec.dx, y + vec.dy)
+    if (neighbor && neighbor.kind === 'conveyor') {
+      return dir
+    }
+  }
+  return undefined
+}
+
 export function updateSimulation(dt: number) {
   spawnTimer += dt
   if (spawnTimer >= SPAWN_RATE) {
@@ -57,8 +71,11 @@ export function updateSimulation(dt: number) {
       return null
     }
 
-    if (tile && tile.direction) {
-      return DIR_VECTORS[tile.direction]
+    if (tile) {
+      const dir = findExitDirection(x, y, tile.direction)
+      if (dir) {
+        return DIR_VECTORS[dir]
+      }
     }
     return null
   })
