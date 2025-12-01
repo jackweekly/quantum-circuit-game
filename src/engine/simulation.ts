@@ -67,7 +67,18 @@ export function updateSimulation(dt: number) {
     if (!gateDef || gateDef.behavior.type !== 'controlled') return
     if (items.length < 2) return
 
-    const [control, target] = [...items].sort((a, b) => a.id - b.id).slice(0, 2)
+    // deterministic control/target: leftmost is control, then by y, then id
+    const sorted = [...items].sort((a, b) => {
+      const ax = Math.round(a.x)
+      const bx = Math.round(b.x)
+      if (ax !== bx) return ax - bx
+      const ay = Math.round(a.y)
+      const by = Math.round(b.y)
+      if (ay !== by) return ay - by
+      return a.id - b.id
+    })
+    const control = sorted[0]
+    const target = sorted[1]
     const controlSys = worldItems.systems.get(control.systemId)
     const targetSys = worldItems.systems.get(target.systemId)
     if (!controlSys || !targetSys) return
