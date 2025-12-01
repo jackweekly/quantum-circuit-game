@@ -1,14 +1,44 @@
 import { useEffect, useRef } from 'react'
-import { Application, Container, Graphics } from 'pixi.js'
+import { Application, Container, FederatedPointerEvent, Graphics } from 'pixi.js'
 import { startLoop, stopLoop, onRender } from '../engine/loop'
+import { worldGrid } from '../engine/grid'
 
 const CELL_SIZE = 48
 const GRID_COLS = 14
 const GRID_ROWS = 9
 
-export function GameCanvas() {
+export type Tool = 'conveyor' | 'erase'
+
+interface Props {
+  selectedTool: Tool
+}
+
+export function GameCanvas({ selectedTool }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const appRef = useRef<Application | null>(null)
+  const tileLayerRef = useRef<Container | null>(null)
+  const toolRef = useRef<Tool>(selectedTool)
+
+  useEffect(() => {
+    toolRef.current = selectedTool
+  }, [selectedTool])
+
+  const renderTiles = () => {
+    const layer = tileLayerRef.current
+    if (!layer) return
+    layer.removeChildren()
+    worldGrid.forEach(({ x, y }, tile) => {
+      const g = new Graphics()
+      if (tile.kind === 'conveyor') {
+        g.rect(0, 0, CELL_SIZE, CELL_SIZE)
+        g.fill(0x33ff66)
+        g.rect(CELL_SIZE - 12, CELL_SIZE / 2 - 6, 8, 12)
+        g.fill(0x0a0f1a)
+      }
+      g.position.set(x * CELL_SIZE, y * CELL_SIZE)
+      layer.addChild(g)
+    })
+  }
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -48,8 +78,30 @@ export function GameCanvas() {
       }
       gridLayer.addChild(gridGfx)
 
+      const tileLayer = new Container()
+      tileLayerRef.current = tileLayer
+      app.stage.addChild(tileLayer)
+
+      // Pointer -> grid placement
+      app.stage.eventMode = 'static'
+      app.stage.hitArea = app.screen
+
+      const handlePointerDown = (e: FederatedPointerEvent) => {
+        const x = Math.floor(e.global.x / CELL_SIZE)
+        const y = Math.floor(e.global.y / CELL_SIZE)
+        if (x < 0 || y < 0) return
+        if (toolRef.current === 'conveyor') {
+          worldGrid.set(x, y, { kind: 'conveyor', direction: 'east' })
+        } else if (toolRef.current === 'erase') {
+          worldGrid.remove(x, y)
+        }
+      }
+
+      app.stage.on('pointerdown', handlePointerDown)
+
       // Render hook for future animated interpolation
       const unsubscribeRender = onRender(() => {
+        renderTiles()
         app.render()
       })
 
@@ -57,9 +109,11 @@ export function GameCanvas() {
 
       return () => {
         unsubscribeRender()
+        app.stage.off('pointerdown', handlePointerDown)
         stopLoop()
         app.destroy()
         appRef.current = null
+        tileLayerRef.current = null
       }
     }
 

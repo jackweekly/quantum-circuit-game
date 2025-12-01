@@ -39,3 +39,6 @@ export class GridManager {
     })
   }
 }
+
+// Shared singleton for the active factory grid
+export const worldGrid = new GridManager()

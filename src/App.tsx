@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import './App.css'
-import { GameCanvas } from './ui/GameCanvas'
+import { GameCanvas, type Tool } from './ui/GameCanvas'
 
 function App() {
+  const [selectedTool, setSelectedTool] = useState<Tool>('conveyor')
+
   return (
     <main className="page">
       <header className="hero">
@@ -24,7 +27,24 @@ function App() {
         <p className="lede">
           Pixi-rendered grid placeholder wired to the fixed-step loop (20 TPS sim, interpolated render).
         </p>
-        <GameCanvas />
+        <div className="toolbar">
+          <span className="label">Tool:</span>
+          <div className="tool-buttons">
+            <button
+              className={`cta ${selectedTool === 'conveyor' ? 'primary' : 'ghost'}`}
+              onClick={() => setSelectedTool('conveyor')}
+            >
+              Conveyor
+            </button>
+            <button
+              className={`cta ${selectedTool === 'erase' ? 'primary' : 'ghost'}`}
+              onClick={() => setSelectedTool('erase')}
+            >
+              Erase
+            </button>
+          </div>
+        </div>
+        <GameCanvas selectedTool={selectedTool} />
       </section>
 
       <section className="panel">
