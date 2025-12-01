@@ -115,11 +115,10 @@ export function GameCanvas() {
     layer.removeChildren()
 
     for (const item of worldItems.getAll()) {
-      const prob0 = item.qubit.alpha.re * item.qubit.alpha.re + item.qubit.alpha.im * item.qubit.alpha.im
-      const prob1 = item.qubit.beta.re * item.qubit.beta.re + item.qubit.beta.im * item.qubit.beta.im
+      const prob1 = item.qubit.getExcitationProbability()
       let color = 0x6cd0ff
       if (prob1 > 0.9) color = 0xff00ff
-      else if (prob0 > 0.4 && prob1 > 0.4) color = 0xffffff
+      else if (prob1 > 0.4) color = 0xffffff
 
       const g = new Graphics()
       g.circle(0, 0, 6)

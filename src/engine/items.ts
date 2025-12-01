@@ -1,4 +1,4 @@
-import { C, type Qubit } from './quantum'
+import { QuantumState, type Qubit } from './quantum'
 
 export interface Item {
   id: number
@@ -21,7 +21,7 @@ class ItemManager {
       x,
       y,
       speed: 4.0,
-      qubit: { alpha: C.one, beta: C.zero },
+      qubit: new QuantumState(),
     })
   }
 
