@@ -29,6 +29,7 @@ export function GameCanvas() {
   const lastMouse = useRef({ x: 0, y: 0 })
   const dragButton = useRef<number | null>(null)
   const zoomRef = useRef(1)
+  const buildDirRef = useRef<'north' | 'south' | 'east' | 'west'>('east')
 
   const drawGateSprite = (g: Graphics, _id: string | undefined, size: number) => {
     g.rect(2, 2, size - 4, size - 4)
@@ -85,9 +86,8 @@ export function GameCanvas() {
         arrow.moveTo(cx - 6, cy - 6).lineTo(cx + 10, cy).lineTo(cx - 6, cy + 6).lineTo(cx - 6, cy - 6)
         arrow.fill(0x0a0f1a)
         const dir = tile.direction || 'east'
-        if (dir === 'north') arrow.rotation = -Math.PI / 2
-        if (dir === 'south') arrow.rotation = Math.PI / 2
-        if (dir === 'west') arrow.rotation = Math.PI
+        arrow.rotation =
+          dir === 'north' ? -Math.PI / 2 : dir === 'south' ? Math.PI / 2 : dir === 'west' ? Math.PI : 0
         arrow.position.set(x * CELL_SIZE, y * CELL_SIZE)
         g.position.set(x * CELL_SIZE, y * CELL_SIZE)
         layer.addChild(g)
@@ -156,12 +156,13 @@ export function GameCanvas() {
       return
     }
     if (button === 0 && state.interactionMode === 'build' && state.selectedBuildId) {
+      buildDirRef.current = state.buildDirection
       if (state.selectedBuildId === 'conveyor') {
-        worldGrid.set(gridX, gridY, { kind: 'conveyor', direction: 'east' })
+        worldGrid.set(gridX, gridY, { kind: 'conveyor', direction: buildDirRef.current })
       } else {
         worldGrid.set(gridX, gridY, {
           kind: 'printer',
-          direction: 'east',
+          direction: buildDirRef.current,
           gateId: state.selectedBuildId,
         })
       }
@@ -299,6 +300,14 @@ export function GameCanvas() {
             }
             wrapper.addChild(g)
             wrapper.position.set(gridX * CELL_SIZE, gridY * CELL_SIZE)
+            wrapper.rotation =
+              buildDirRef.current === 'north'
+                ? -Math.PI / 2
+                : buildDirRef.current === 'south'
+                  ? Math.PI / 2
+                  : buildDirRef.current === 'west'
+                    ? Math.PI
+                    : 0
             ghostLayer.addChild(wrapper)
           }
         }

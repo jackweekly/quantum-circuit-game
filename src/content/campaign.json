@@ -3,6 +3,10 @@
     {
       "id": "ch0",
       "title": "Classical Warmup",
+      "layout": [
+        { "x": 2, "y": 5, "kind": "source", "direction": "east" },
+        { "x": 12, "y": 5, "kind": "sink", "direction": "east" }
+      ],
       "contracts": [
         {
           "id": "contract-logic-routing",

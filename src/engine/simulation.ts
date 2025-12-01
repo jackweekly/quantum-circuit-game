@@ -1,7 +1,8 @@
 import { worldGrid, type Direction } from './grid'
-import { worldItems } from './items'
+import { worldItems, type Item } from './items'
 import { getGate } from '../content/registry'
 import { useGameStore } from '../state/useGameStore'
+import { LinAlg } from './quantum'
 
 const DIR_VECTORS: Record<Direction, { dx: number; dy: number }> = {
   north: { dx: 0, dy: -1 },
@@ -35,9 +36,63 @@ export function updateSimulation(dt: number) {
     worldGrid.forEach(({ x, y }, tile) => {
       if (tile.kind === 'source') {
         worldItems.spawn(x, y)
-      }
-    })
+    }
+  })
+
+  // Process controlled (multi-qubit) gates after movement
+  const occupancy = new Map<string, Item[]>()
+  for (const item of worldItems.getAll()) {
+    const gx = Math.round(item.x)
+    const gy = Math.round(item.y)
+    const key = `${gx},${gy}`
+    const list = occupancy.get(key) || []
+    list.push(item)
+    occupancy.set(key, list)
   }
+
+  const cnotMatrix = LinAlg.parseMatrix([
+    [1, 0, 0, 0],
+    [0, 1, 0, 0],
+    [0, 0, 0, 1],
+    [0, 0, 1, 0],
+  ])
+
+  occupancy.forEach((items, key) => {
+    const [xStr, yStr] = key.split(',')
+    const gx = Number(xStr)
+    const gy = Number(yStr)
+    const tile = worldGrid.get(gx, gy)
+    if (!tile || tile.kind !== 'printer' || !tile.gateId) return
+    const gateDef = getGate(tile.gateId)
+    if (!gateDef || gateDef.behavior.type !== 'controlled') return
+    if (items.length < 2) return
+
+    const [control, target] = [...items].sort((a, b) => a.id - b.id).slice(0, 2)
+    const controlSys = worldItems.systems.get(control.systemId)
+    const targetSys = worldItems.systems.get(target.systemId)
+    if (!controlSys || !targetSys) return
+
+    if (controlSys.id !== targetSys.id) {
+      // For now only merge single-qubit systems to keep indices contiguous
+      if (controlSys.qubitCount !== 1 || targetSys.qubitCount !== 1) return
+      worldItems.mergeSystems(control, target)
+    }
+
+    const system = worldItems.systems.get(control.systemId)
+    if (!system) return
+
+    const ctrlIndex = control.qubitIndex
+    const tgtIndex = target.qubitIndex
+    if (Math.abs(ctrlIndex - tgtIndex) !== 1) return
+    const minIndex = Math.min(ctrlIndex, tgtIndex)
+
+    const preSize = Math.pow(2, minIndex)
+    const postSize = Math.pow(2, system.qubitCount - minIndex - 2)
+    let full = LinAlg.tensorMat(LinAlg.eye(preSize), cnotMatrix)
+    full = LinAlg.tensorMat(full, LinAlg.eye(postSize))
+    system.vector = LinAlg.apply(full, system.vector)
+  })
+}
 
   worldItems.update(dt, (item, x, y) => {
     const tile = worldGrid.get(x, y)

@@ -6,6 +6,7 @@ export interface Tile {
   kind: TileKind
   direction?: Direction
   gateId?: string
+  locked?: boolean
 }
 
 const key = (x: number, y: number) => `${x},${y}`

@@ -35,6 +35,16 @@ class ItemManager {
     return this.items.values()
   }
 
+  getItemsAt(gridX: number, gridY: number): Item[] {
+    const result: Item[] = []
+    for (const item of this.items.values()) {
+      if (Math.round(item.x) === gridX && Math.round(item.y) === gridY) {
+        result.push(item)
+      }
+    }
+    return result
+  }
+
   private isTileBlocked(tx: number, ty: number, excludeId: number) {
     for (const item of this.items.values()) {
       if (item.id === excludeId) continue
@@ -59,6 +69,24 @@ class ItemManager {
   destroyAll() {
     this.items.clear()
     this.systems.clear()
+  }
+
+  mergeSystems(control: Item, target: Item) {
+    const controlSys = this.systems.get(control.systemId)
+    const targetSys = this.systems.get(target.systemId)
+    if (!controlSys || !targetSys) return
+    if (controlSys.id === targetSys.id) return
+
+    const offset = controlSys.qubitCount
+    controlSys.merge(targetSys)
+
+    for (const item of this.items.values()) {
+      if (item.systemId === targetSys.id) {
+        item.systemId = controlSys.id
+        item.qubitIndex += offset
+      }
+    }
+    this.systems.delete(targetSys.id)
   }
 
   update(

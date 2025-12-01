@@ -2,7 +2,8 @@ import { useGameStore } from '../../state/useGameStore'
 import { listGates } from '../../content/registry'
 
 export function BuildToolbar() {
-  const { selectedBuildId, interactionMode, setSelectedBuildId, setInteractionMode } = useGameStore()
+  const { selectedBuildId, interactionMode, setSelectedBuildId, setInteractionMode, setBuildDirection } =
+    useGameStore()
   const gates = listGates()
 
   return (
@@ -26,25 +27,23 @@ export function BuildToolbar() {
 
       <div className="toolbar-group">
         <button
-          className={`tool-btn ${selectedBuildId === 'source' ? 'active' : ''}`}
-          onClick={() => setSelectedBuildId('source')}
-          title="Source (spawns |0>)"
-        >
-          📥
-        </button>
-        <button
-          className={`tool-btn ${selectedBuildId === 'sink' ? 'active' : ''}`}
-          onClick={() => setSelectedBuildId('sink')}
-          title="Sink (measures)"
-        >
-          📤
-        </button>
-        <button
           className={`tool-btn ${selectedBuildId === 'conveyor' ? 'active' : ''}`}
           onClick={() => setSelectedBuildId('conveyor')}
           title="Conveyor Belt"
         >
           ⮕
+        </button>
+        <button className="tool-btn" onClick={() => setBuildDirection('north')} title="Face North">
+          ⬆️
+        </button>
+        <button className="tool-btn" onClick={() => setBuildDirection('east')} title="Face East">
+          ➡️
+        </button>
+        <button className="tool-btn" onClick={() => setBuildDirection('south')} title="Face South">
+          ⬇️
+        </button>
+        <button className="tool-btn" onClick={() => setBuildDirection('west')} title="Face West">
+          ⬅️
         </button>
       </div>
 
