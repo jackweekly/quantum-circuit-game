@@ -20,6 +20,7 @@ body {
   background: radial-gradient(circle at 20% 20%, rgba(63, 99, 191, 0.18), transparent 35%),
     radial-gradient(circle at 80% 0%, rgba(108, 208, 255, 0.16), transparent 40%),
     #0b0f1a;
+  user-select: none;
 }
 
 html,

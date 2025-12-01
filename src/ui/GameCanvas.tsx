@@ -6,35 +6,72 @@ import { useGameStore } from '../state/useGameStore'
 import { worldItems } from '../engine/items'
 
 const CELL_SIZE = 48
-const GRID_COLS = 20
-const GRID_ROWS = 12
 
 export function GameCanvas() {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const appRef = useRef<Application | null>(null)
+
+  const viewportRef = useRef<Container | null>(null)
+  const gridLayerRef = useRef<Container | null>(null)
   const tileLayerRef = useRef<Container | null>(null)
   const itemLayerRef = useRef<Container | null>(null)
   const ghostLayerRef = useRef<Container | null>(null)
-  const mouseRef = useRef<{ x: number; y: number } | null>(null)
+
+  const isPanning = useRef(false)
+  const isDraggingAction = useRef(false)
+  const lastMouse = useRef({ x: 0, y: 0 })
+  const dragButton = useRef<number | null>(null)
+
+  const renderGrid = (app: Application) => {
+    const layer = gridLayerRef.current
+    const viewport = viewportRef.current
+    if (!layer || !viewport) return
+
+    layer.removeChildren()
+    const g = new Graphics()
+
+    const startX = Math.floor(-viewport.x / CELL_SIZE) - 1
+    const startY = Math.floor(-viewport.y / CELL_SIZE) - 1
+    const endX = startX + Math.ceil(app.screen.width / CELL_SIZE) + 2
+    const endY = startY + Math.ceil(app.screen.height / CELL_SIZE) + 2
+
+    g.strokeStyle = { width: 1, color: 0xffffff, alpha: 0.05 }
+
+    for (let x = startX; x <= endX; x++) {
+      g.moveTo(x * CELL_SIZE, startY * CELL_SIZE)
+      g.lineTo(x * CELL_SIZE, endY * CELL_SIZE)
+    }
+    for (let y = startY; y <= endY; y++) {
+      g.moveTo(startX * CELL_SIZE, y * CELL_SIZE)
+      g.lineTo(endX * CELL_SIZE, y * CELL_SIZE)
+    }
+    g.stroke()
+    layer.addChild(g)
+  }
 
   const renderTiles = () => {
     const layer = tileLayerRef.current
     if (!layer) return
     layer.removeChildren()
+
     worldGrid.forEach(({ x, y }, tile) => {
       const g = new Graphics()
       if (tile.kind === 'conveyor') {
         g.rect(0, 0, CELL_SIZE, CELL_SIZE)
         g.fill(0x33ff66)
-        g.rect(CELL_SIZE - 12, CELL_SIZE / 2 - 6, 8, 12)
+        const dirOffsets: Record<string, number> = { north: 0, east: 1, south: 2, west: 3 }
+        const rotation = ((dirOffsets[tile.direction || 'east'] || 1) * Math.PI) / 2
+        g.rect(-4, -6, 8, 12)
         g.fill(0x0a0f1a)
+        g.rotation = rotation
+        g.position.set(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE / 2)
       } else if (tile.kind === 'printer') {
         g.rect(2, 2, CELL_SIZE - 4, CELL_SIZE - 4)
         g.fill(0x6cd0ff)
         g.rect(10, 10, CELL_SIZE - 20, CELL_SIZE - 20)
         g.fill(0x0a0f1a)
+        g.position.set(x * CELL_SIZE, y * CELL_SIZE)
       }
-      g.position.set(x * CELL_SIZE, y * CELL_SIZE)
       layer.addChild(g)
     })
   }
@@ -54,41 +91,34 @@ export function GameCanvas() {
     }
   }
 
-  const renderGhost = () => {
-    const layer = ghostLayerRef.current
-    if (!layer) return
-    layer.removeChildren()
-    const mouse = mouseRef.current
+  const performAction = (gridX: number, gridY: number, button: number) => {
     const state = useGameStore.getState()
-    if (!mouse || state.interactionMode !== 'build' || !state.selectedBuildId) return
-
-    const g = new Graphics()
-    g.position.set(mouse.x * CELL_SIZE, mouse.y * CELL_SIZE)
-    if (state.selectedBuildId === 'conveyor') {
-      g.rect(0, 0, CELL_SIZE, CELL_SIZE)
-      g.fill({ color: 0x33ff66, alpha: 0.35 })
-    } else {
-      g.rect(2, 2, CELL_SIZE - 4, CELL_SIZE - 4)
-      g.fill({ color: 0x6cd0ff, alpha: 0.35 })
+    if (button === 2) {
+      worldGrid.remove(gridX, gridY)
+      return
     }
-    layer.addChild(g)
+    if (button === 0 && state.interactionMode === 'build' && state.selectedBuildId) {
+      if (state.selectedBuildId === 'conveyor') {
+        worldGrid.set(gridX, gridY, { kind: 'conveyor', direction: 'east' })
+      } else {
+        worldGrid.set(gridX, gridY, { kind: 'printer', direction: 'south' })
+      }
+    } else if (button === 0 && state.interactionMode === 'erase') {
+      worldGrid.remove(gridX, gridY)
+    }
   }
 
   useEffect(() => {
     if (!containerRef.current) return
-
     let destroyed = false
 
     const bootstrap = async () => {
       const app = new Application()
       await app.init({
-        width: GRID_COLS * CELL_SIZE,
-        height: GRID_ROWS * CELL_SIZE,
+        resizeTo: window,
         backgroundAlpha: 0,
         antialias: true,
       })
-
-      // Drive Pixi via our loop; avoid its internal RAF
       app.ticker.stop()
 
       if (destroyed) {
@@ -98,73 +128,101 @@ export function GameCanvas() {
 
       appRef.current = app
       containerRef.current?.appendChild(app.canvas)
+      app.canvas.addEventListener('contextmenu', (e) => e.preventDefault())
+
+      const viewport = new Container()
+      viewportRef.current = viewport
+      app.stage.addChild(viewport)
 
       const gridLayer = new Container()
       const tileLayer = new Container()
       const itemLayer = new Container()
       const ghostLayer = new Container()
-      ghostLayer.alpha = 0.7
+
+      gridLayerRef.current = gridLayer
       tileLayerRef.current = tileLayer
       itemLayerRef.current = itemLayer
       ghostLayerRef.current = ghostLayer
-      app.stage.addChild(gridLayer, tileLayer, itemLayer, ghostLayer)
 
-      // Subtle grid lines
-      const gridGfx = new Graphics()
-      gridGfx.strokeStyle = { width: 1, color: 0xffffff, alpha: 0.05 }
-      for (let x = 0; x <= GRID_COLS; x++) {
-        gridGfx.moveTo(x * CELL_SIZE, 0).lineTo(x * CELL_SIZE, GRID_ROWS * CELL_SIZE)
-      }
-      for (let y = 0; y <= GRID_ROWS; y++) {
-        gridGfx.moveTo(0, y * CELL_SIZE).lineTo(GRID_COLS * CELL_SIZE, y * CELL_SIZE)
-      }
-      gridGfx.stroke()
+      viewport.addChild(gridLayer, tileLayer, itemLayer, ghostLayer)
 
-      gridLayer.addChild(gridGfx)
-
-      // Pointer -> grid placement
       app.stage.eventMode = 'static'
       app.stage.hitArea = app.screen
       app.canvas.style.cursor = 'crosshair'
 
-      const handlePointerDown = (e: FederatedPointerEvent) => {
-        const state = useGameStore.getState()
-        const x = Math.floor(e.global.x / CELL_SIZE)
-        const y = Math.floor(e.global.y / CELL_SIZE)
-        if (x < 0 || x >= GRID_COLS || y < 0 || y >= GRID_ROWS) return
+      const getGridPos = (globalX: number, globalY: number) => {
+        const local = viewport.toLocal({ x: globalX, y: globalY })
+        return { x: Math.floor(local.x / CELL_SIZE), y: Math.floor(local.y / CELL_SIZE) }
+      }
 
-        if (e.button === 1) {
-          worldItems.spawn(x, y)
+      app.stage.on('pointerdown', (e: FederatedPointerEvent) => {
+        const btn = e.button
+        lastMouse.current = { x: e.global.x, y: e.global.y }
+        dragButton.current = btn
+
+        if (btn === 1) {
+          isPanning.current = true
           return
         }
 
-        if (state.interactionMode === 'build' && state.selectedBuildId) {
-          if (state.selectedBuildId === 'conveyor') {
-            worldGrid.set(x, y, { kind: 'conveyor', direction: 'east' })
-          } else {
-            worldGrid.set(x, y, { kind: 'printer', direction: 'south' })
+        isDraggingAction.current = true
+        const { x, y } = getGridPos(e.global.x, e.global.y)
+        performAction(x, y, btn)
+      })
+
+      app.stage.on('pointerup', () => {
+        isPanning.current = false
+        isDraggingAction.current = false
+        dragButton.current = null
+      })
+
+      app.stage.on('pointerupoutside', () => {
+        isPanning.current = false
+        isDraggingAction.current = false
+        dragButton.current = null
+      })
+
+      app.stage.on('pointermove', (e: FederatedPointerEvent) => {
+        const { x: gridX, y: gridY } = getGridPos(e.global.x, e.global.y)
+
+        if (isPanning.current) {
+          const dx = e.global.x - lastMouse.current.x
+          const dy = e.global.y - lastMouse.current.y
+          const viewport = viewportRef.current
+          if (viewport) {
+            viewport.position.x += dx
+            viewport.position.y += dy
           }
-        } else if (state.interactionMode === 'erase') {
-          worldGrid.remove(x, y)
+          lastMouse.current = { x: e.global.x, y: e.global.y }
         }
-      }
 
-      const handlePointerMove = (e: FederatedPointerEvent) => {
-        const x = Math.floor(e.global.x / CELL_SIZE)
-        const y = Math.floor(e.global.y / CELL_SIZE)
-        const prev = mouseRef.current
-        if (prev && prev.x === x && prev.y === y) return
-        mouseRef.current = { x, y }
-      }
+        if (isDraggingAction.current && dragButton.current !== null) {
+          performAction(gridX, gridY, dragButton.current)
+        }
 
-      app.stage.on('pointerdown', handlePointerDown)
-      app.stage.on('pointermove', handlePointerMove)
+        const ghostLayer = ghostLayerRef.current
+        if (ghostLayer) {
+          ghostLayer.removeChildren()
+          const state = useGameStore.getState()
+          if (state.interactionMode === 'build' && state.selectedBuildId) {
+            const g = new Graphics()
+            g.position.set(gridX * CELL_SIZE, gridY * CELL_SIZE)
+            if (state.selectedBuildId === 'conveyor') {
+              g.rect(0, 0, CELL_SIZE, CELL_SIZE)
+              g.fill({ color: 0x33ff66, alpha: 0.5 })
+            } else {
+              g.rect(2, 2, CELL_SIZE - 4, CELL_SIZE - 4)
+              g.fill({ color: 0x6cd0ff, alpha: 0.5 })
+            }
+            ghostLayer.addChild(g)
+          }
+        }
+      })
 
-      // Render hook for future animated interpolation
       const unsubscribeRender = onRender(() => {
+        renderGrid(app)
         renderTiles()
         renderItems()
-        renderGhost()
         app.render()
       })
 
@@ -172,18 +230,13 @@ export function GameCanvas() {
 
       return () => {
         unsubscribeRender()
-        app.stage.off('pointerdown', handlePointerDown)
-        app.stage.off('pointermove', handlePointerMove)
         stopLoop()
         app.destroy()
         appRef.current = null
-        tileLayerRef.current = null
-        ghostLayerRef.current = null
       }
     }
 
     const teardownPromise = bootstrap()
-
     return () => {
       destroyed = true
       teardownPromise.then((cleanup) => {
