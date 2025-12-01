@@ -1,4 +1,5 @@
 import { useGameStore } from '../state/useGameStore'
+import { updateSimulation } from './simulation'
 
 type SimTick = (dt: number) => void
 type RenderTick = (alpha: number, frameDt: number) => void
@@ -20,6 +21,7 @@ function frame(now: number) {
   // Run fixed-step simulation ticks
   while (accumulator >= SIM_DT) {
     useGameStore.getState().advanceTick()
+    updateSimulation(SIM_DT)
     simSubscribers.forEach((fn) => fn(SIM_DT))
     accumulator -= SIM_DT
   }
