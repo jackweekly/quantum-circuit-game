@@ -277,6 +277,7 @@ export function GameCanvas() {
           ghostLayer.removeChildren()
           const state = useGameStore.getState()
           if (state.interactionMode === 'build' && state.selectedBuildId) {
+            const wrapper = new Container()
             const g = new Graphics()
             if (state.selectedBuildId === 'conveyor') {
               g.rect(0, 0, CELL_SIZE, CELL_SIZE).fill({ color: 0x33ff66, alpha: 0.5 })
@@ -285,8 +286,7 @@ export function GameCanvas() {
               const cy = CELL_SIZE / 2
               arrow.moveTo(cx - 6, cy - 6).lineTo(cx + 10, cy).lineTo(cx - 6, cy + 6).lineTo(cx - 6, cy - 6)
               arrow.fill({ color: 0x0a0f1a, alpha: 0.6 })
-              arrow.position.set(0, 0)
-              g.addChild(arrow)
+              wrapper.addChild(arrow)
             } else {
               drawGateSprite(g, state.selectedBuildId, CELL_SIZE)
               const text = new Text({
@@ -295,10 +295,11 @@ export function GameCanvas() {
               })
               text.anchor.set(0.5)
               text.position.set(CELL_SIZE / 2, CELL_SIZE / 2)
-              g.addChild(text)
+              wrapper.addChild(text)
             }
-            g.position.set(gridX * CELL_SIZE, gridY * CELL_SIZE)
-            ghostLayer.addChild(g)
+            wrapper.addChild(g)
+            wrapper.position.set(gridX * CELL_SIZE, gridY * CELL_SIZE)
+            ghostLayer.addChild(wrapper)
           }
         }
       })
