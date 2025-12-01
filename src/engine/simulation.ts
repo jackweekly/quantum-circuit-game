@@ -2,6 +2,7 @@ import { worldGrid, type Direction } from './grid'
 import { worldItems } from './items'
 import { getGate } from '../content/registry'
 import { applyGate, measure } from './quantum'
+import { useGameStore } from '../state/useGameStore'
 
 const DIR_VECTORS: Record<Direction, { dx: number; dy: number }> = {
   north: { dx: 0, dy: -1 },
@@ -11,8 +12,20 @@ const DIR_VECTORS: Record<Direction, { dx: number; dy: number }> = {
 }
 
 const processedLog = new Map<string, true>()
+let spawnTimer = 0
+const SPAWN_RATE = 4000
 
 export function updateSimulation(dt: number) {
+  spawnTimer += dt
+  if (spawnTimer >= SPAWN_RATE) {
+    spawnTimer = 0
+    worldGrid.forEach(({ x, y }, tile) => {
+      if (tile.kind === 'source') {
+        worldItems.spawn(x, y)
+      }
+    })
+  }
+
   worldItems.update(dt, (item, x, y) => {
     const tile = worldGrid.get(x, y)
 
@@ -31,6 +44,15 @@ export function updateSimulation(dt: number) {
 
     if (tile && tile.kind === 'scanner') {
       measure(item.qubit)
+      worldItems.destroy(item.id)
+      return null
+    }
+
+    if (tile && tile.kind === 'sink') {
+      const prob1 = item.qubit.getExcitationProbability()
+      if (prob1 > 0.9) {
+        useGameStore.getState().incrementScore(1)
+      }
       worldItems.destroy(item.id)
       return null
     }

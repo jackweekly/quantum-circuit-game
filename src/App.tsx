@@ -5,6 +5,8 @@ import { useGameStore } from './state/useGameStore'
 
 function App() {
   const tick = useGameStore((s) => s.tick)
+  const score = useGameStore((s) => s.score)
+  const goal = useGameStore((s) => s.goal)
 
   return (
     <div className="game-layout">
@@ -13,8 +15,9 @@ function App() {
           Quantum Foundry <span style={{ opacity: 0.5 }}>// PROTOTYPE</span>
         </div>
         <div className="hud-stats">
+          <span>Goal: {goal}</span>
+          <span>Score: {score}</span>
           <span>TICK: {tick}</span>
-          <span>QUBITS: 0</span>
         </div>
       </div>
 

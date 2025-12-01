@@ -105,6 +105,23 @@ export function GameCanvas() {
           text.position.set(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE / 2)
           layer.addChild(text)
         }
+      } else if (tile.kind === 'source') {
+        g.rect(4, 4, CELL_SIZE - 8, CELL_SIZE - 8).fill(0xffaa00)
+        const arrow = new Graphics()
+        arrow.rect(CELL_SIZE / 2 - 4, -6, 8, 12).fill(0xffffff)
+        const dirOffsets: Record<string, number> = { north: 0, east: 1, south: 2, west: 3 }
+        const rotation = ((dirOffsets[tile.direction || 'east'] || 0) * Math.PI) / 2
+        arrow.rotation = rotation
+        arrow.position.set(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE / 2)
+        g.position.set(x * CELL_SIZE, y * CELL_SIZE)
+        layer.addChild(g)
+        layer.addChild(arrow)
+      } else if (tile.kind === 'sink') {
+        g.rect(4, 4, CELL_SIZE - 8, CELL_SIZE - 8)
+        g.fill(0xaa00aa)
+        g.stroke({ width: 2, color: 0xffffff })
+        g.position.set(x * CELL_SIZE, y * CELL_SIZE)
+        layer.addChild(g)
       }
     })
   }
@@ -138,6 +155,10 @@ export function GameCanvas() {
     if (button === 0 && state.interactionMode === 'build' && state.selectedBuildId) {
       if (state.selectedBuildId === 'conveyor') {
         worldGrid.set(gridX, gridY, { kind: 'conveyor', direction: 'east' })
+      } else if (state.selectedBuildId === 'source') {
+        worldGrid.set(gridX, gridY, { kind: 'source', direction: 'east' })
+      } else if (state.selectedBuildId === 'sink') {
+        worldGrid.set(gridX, gridY, { kind: 'sink', direction: 'north' })
       } else {
         worldGrid.set(gridX, gridY, {
           kind: 'printer',
@@ -257,23 +278,27 @@ export function GameCanvas() {
           ghostLayer.removeChildren()
           const state = useGameStore.getState()
 
-          if (state.interactionMode === 'build' && state.selectedBuildId) {
-            const g = new Graphics()
+            if (state.interactionMode === 'build' && state.selectedBuildId) {
+              const g = new Graphics()
 
-            if (state.selectedBuildId === 'conveyor') {
-              g.rect(0, 0, CELL_SIZE, CELL_SIZE).fill({ color: 0x33ff66, alpha: 0.5 })
-              const arrow = new Graphics()
-              const cx = CELL_SIZE / 2
-              const cy = CELL_SIZE / 2
-              arrow.moveTo(cx - 6, cy - 6).lineTo(cx + 10, cy).lineTo(cx - 6, cy + 6).lineTo(cx - 6, cy - 6)
-              arrow.fill({ color: 0x0a0f1a, alpha: 0.6 })
-              arrow.position.set(0, 0)
-              g.addChild(arrow)
-            } else {
-              drawGateSprite(g, state.selectedBuildId, CELL_SIZE)
-              const text = new Text({
-                text: state.selectedBuildId.toUpperCase().slice(0, 2),
-                style: { fontFamily: 'monospace', fontSize: 20, fill: 'rgba(255,255,255,0.7)' },
+              if (state.selectedBuildId === 'conveyor') {
+                g.rect(0, 0, CELL_SIZE, CELL_SIZE).fill({ color: 0x33ff66, alpha: 0.5 })
+                const arrow = new Graphics()
+                const cx = CELL_SIZE / 2
+                const cy = CELL_SIZE / 2
+                arrow.moveTo(cx - 6, cy - 6).lineTo(cx + 10, cy).lineTo(cx - 6, cy + 6).lineTo(cx - 6, cy - 6)
+                arrow.fill({ color: 0x0a0f1a, alpha: 0.6 })
+                arrow.position.set(0, 0)
+                g.addChild(arrow)
+              } else if (state.selectedBuildId === 'source') {
+                g.rect(4, 4, CELL_SIZE - 8, CELL_SIZE - 8).fill({ color: 0xffaa00, alpha: 0.5 })
+              } else if (state.selectedBuildId === 'sink') {
+                g.rect(4, 4, CELL_SIZE - 8, CELL_SIZE - 8).fill({ color: 0xaa00aa, alpha: 0.5 })
+              } else {
+                drawGateSprite(g, state.selectedBuildId, CELL_SIZE)
+                const text = new Text({
+                  text: state.selectedBuildId.toUpperCase().slice(0, 2),
+                  style: { fontFamily: 'monospace', fontSize: 20, fill: 'rgba(255,255,255,0.7)' },
               })
               text.anchor.set(0.5)
               text.position.set(CELL_SIZE / 2, CELL_SIZE / 2)

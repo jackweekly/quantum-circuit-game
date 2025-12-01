@@ -1,6 +1,6 @@
 export type Direction = 'north' | 'south' | 'east' | 'west'
 
-export type TileKind = 'empty' | 'conveyor' | 'printer' | 'linker' | 'sync' | 'scanner'
+export type TileKind = 'empty' | 'conveyor' | 'printer' | 'linker' | 'sync' | 'scanner' | 'source' | 'sink'
 
 export interface Tile {
   kind: TileKind

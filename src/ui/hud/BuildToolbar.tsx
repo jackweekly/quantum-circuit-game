@@ -26,6 +26,20 @@ export function BuildToolbar() {
 
       <div className="toolbar-group">
         <button
+          className={`tool-btn ${selectedBuildId === 'source' ? 'active' : ''}`}
+          onClick={() => setSelectedBuildId('source')}
+          title="Source (spawns |0>)"
+        >
+          📥
+        </button>
+        <button
+          className={`tool-btn ${selectedBuildId === 'sink' ? 'active' : ''}`}
+          onClick={() => setSelectedBuildId('sink')}
+          title="Sink (measures)"
+        >
+          📤
+        </button>
+        <button
           className={`tool-btn ${selectedBuildId === 'conveyor' ? 'active' : ''}`}
           onClick={() => setSelectedBuildId('conveyor')}
           title="Conveyor Belt"
