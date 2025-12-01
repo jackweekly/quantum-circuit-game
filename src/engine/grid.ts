@@ -5,6 +5,7 @@ export type TileKind = 'empty' | 'conveyor' | 'printer' | 'linker' | 'sync'
 export interface Tile {
   kind: TileKind
   direction?: Direction
+  gateId?: string
 }
 
 const key = (x: number, y: number) => `${x},${y}`

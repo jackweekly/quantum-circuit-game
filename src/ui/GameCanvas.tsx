@@ -1,5 +1,12 @@
 import { useEffect, useRef } from 'react'
-import { Application, Container, FederatedPointerEvent, Graphics } from 'pixi.js'
+import {
+  Application,
+  Container,
+  FederatedPointerEvent,
+  Graphics,
+  Text,
+  TextStyle,
+} from 'pixi.js'
 import { startLoop, stopLoop, onRender } from '../engine/loop'
 import { worldGrid } from '../engine/grid'
 import { useGameStore } from '../state/useGameStore'
@@ -22,6 +29,12 @@ export function GameCanvas() {
   const lastMouse = useRef({ x: 0, y: 0 })
   const dragButton = useRef<number | null>(null)
 
+  const drawGateSprite = (g: Graphics, _id: string | undefined, size: number) => {
+    g.rect(2, 2, size - 4, size - 4)
+    g.fill(0x2a3b55)
+    g.stroke({ width: 2, color: 0x6cd0ff })
+  }
+
   const renderGrid = (app: Application) => {
     const layer = gridLayerRef.current
     const viewport = viewportRef.current
@@ -35,7 +48,7 @@ export function GameCanvas() {
     const endX = startX + Math.ceil(app.screen.width / CELL_SIZE) + 2
     const endY = startY + Math.ceil(app.screen.height / CELL_SIZE) + 2
 
-    g.strokeStyle = { width: 1, color: 0xffffff, alpha: 0.05 }
+    g.strokeStyle = { width: 1, color: 0xffffff, alpha: 0.08 }
 
     for (let x = startX; x <= endX; x++) {
       g.moveTo(x * CELL_SIZE, startY * CELL_SIZE)
@@ -54,25 +67,39 @@ export function GameCanvas() {
     if (!layer) return
     layer.removeChildren()
 
+    const labelStyle = new TextStyle({
+      fontFamily: 'monospace',
+      fontSize: 20,
+      fontWeight: 'bold',
+      fill: '#ffffff',
+    })
+
     worldGrid.forEach(({ x, y }, tile) => {
       const g = new Graphics()
       if (tile.kind === 'conveyor') {
         g.rect(0, 0, CELL_SIZE, CELL_SIZE)
         g.fill(0x33ff66)
         const dirOffsets: Record<string, number> = { north: 0, east: 1, south: 2, west: 3 }
-        const rotation = ((dirOffsets[tile.direction || 'east'] || 1) * Math.PI) / 2
+        const rotation = ((dirOffsets[tile.direction || 'east'] || 0) * Math.PI) / 2
         g.rect(-4, -6, 8, 12)
         g.fill(0x0a0f1a)
         g.rotation = rotation
         g.position.set(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE / 2)
+        layer.addChild(g)
       } else if (tile.kind === 'printer') {
-        g.rect(2, 2, CELL_SIZE - 4, CELL_SIZE - 4)
-        g.fill(0x6cd0ff)
-        g.rect(10, 10, CELL_SIZE - 20, CELL_SIZE - 20)
-        g.fill(0x0a0f1a)
         g.position.set(x * CELL_SIZE, y * CELL_SIZE)
+        drawGateSprite(g, tile.gateId, CELL_SIZE)
+        layer.addChild(g)
+        if (tile.gateId) {
+          const text = new Text({
+            text: tile.gateId.toUpperCase().slice(0, 2),
+            style: labelStyle,
+          })
+          text.anchor.set(0.5)
+          text.position.set(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE / 2)
+          layer.addChild(text)
+        }
       }
-      layer.addChild(g)
     })
   }
 
@@ -101,7 +128,11 @@ export function GameCanvas() {
       if (state.selectedBuildId === 'conveyor') {
         worldGrid.set(gridX, gridY, { kind: 'conveyor', direction: 'east' })
       } else {
-        worldGrid.set(gridX, gridY, { kind: 'printer', direction: 'south' })
+        worldGrid.set(gridX, gridY, {
+          kind: 'printer',
+          direction: 'south',
+          gateId: state.selectedBuildId,
+        })
       }
     } else if (button === 0 && state.interactionMode === 'erase') {
       worldGrid.remove(gridX, gridY)
@@ -167,6 +198,12 @@ export function GameCanvas() {
 
         isDraggingAction.current = true
         const { x, y } = getGridPos(e.global.x, e.global.y)
+
+        if (e.shiftKey && btn === 0) {
+          worldItems.spawn(x, y)
+          return
+        }
+
         performAction(x, y, btn)
       })
 
@@ -204,16 +241,25 @@ export function GameCanvas() {
         if (ghostLayer) {
           ghostLayer.removeChildren()
           const state = useGameStore.getState()
+
           if (state.interactionMode === 'build' && state.selectedBuildId) {
             const g = new Graphics()
-            g.position.set(gridX * CELL_SIZE, gridY * CELL_SIZE)
+
             if (state.selectedBuildId === 'conveyor') {
               g.rect(0, 0, CELL_SIZE, CELL_SIZE)
               g.fill({ color: 0x33ff66, alpha: 0.5 })
             } else {
-              g.rect(2, 2, CELL_SIZE - 4, CELL_SIZE - 4)
-              g.fill({ color: 0x6cd0ff, alpha: 0.5 })
+              drawGateSprite(g, state.selectedBuildId, CELL_SIZE)
+              const text = new Text({
+                text: state.selectedBuildId.toUpperCase().slice(0, 2),
+                style: { fontFamily: 'monospace', fontSize: 20, fill: 'rgba(255,255,255,0.7)' },
+              })
+              text.anchor.set(0.5)
+              text.position.set(CELL_SIZE / 2, CELL_SIZE / 2)
+              g.addChild(text)
             }
+
+            g.position.set(gridX * CELL_SIZE, gridY * CELL_SIZE)
             ghostLayer.addChild(g)
           }
         }
