@@ -104,6 +104,20 @@ export function GameCanvas() {
           text.anchor.set(0.5)
           text.position.set(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE / 2)
           layer.addChild(text)
+          if (tile.gateId === 'cnot') {
+            const overlay = new Graphics()
+            overlay.lineStyle(2, 0x6cd0ff, 0.7)
+            overlay.moveTo(x * CELL_SIZE + 6, y * CELL_SIZE + CELL_SIZE / 2)
+            overlay.lineTo(x * CELL_SIZE + CELL_SIZE - 6, y * CELL_SIZE + CELL_SIZE / 2)
+            const control = new Graphics()
+            control.circle(x * CELL_SIZE + 10, y * CELL_SIZE + CELL_SIZE / 2, 4).fill(0x6cd0ff)
+            const target = new Graphics()
+            target.circle(x * CELL_SIZE + CELL_SIZE - 10, y * CELL_SIZE + CELL_SIZE / 2, 6).stroke({
+              width: 2,
+              color: 0xffffff,
+            })
+            layer.addChild(overlay, control, target)
+          }
         }
       } else if (tile.kind === 'source') {
         g.rect(4, 4, CELL_SIZE - 8, CELL_SIZE - 8).fill(0xffaa00)
@@ -303,6 +317,17 @@ export function GameCanvas() {
               text.anchor.set(0.5)
               text.position.set(CELL_SIZE / 2, CELL_SIZE / 2)
               wrapper.addChild(text)
+              if (state.selectedBuildId === 'cnot') {
+                const overlay = new Graphics()
+                overlay.lineStyle(2, 0x6cd0ff, 0.5)
+                overlay.moveTo(6, CELL_SIZE / 2)
+                overlay.lineTo(CELL_SIZE - 6, CELL_SIZE / 2)
+                const control = new Graphics()
+                control.circle(10, CELL_SIZE / 2, 4).fill(0x6cd0ff)
+                const target = new Graphics()
+                target.circle(CELL_SIZE - 10, CELL_SIZE / 2, 6).stroke({ width: 2, color: 0xffffff })
+                wrapper.addChild(overlay, control, target)
+              }
             }
             wrapper.addChild(g)
             wrapper.position.set(gridX * CELL_SIZE, gridY * CELL_SIZE)
