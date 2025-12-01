@@ -14,6 +14,8 @@ export function GameCanvas() {
   const appRef = useRef<Application | null>(null)
   const tileLayerRef = useRef<Container | null>(null)
   const itemLayerRef = useRef<Container | null>(null)
+  const ghostLayerRef = useRef<Container | null>(null)
+  const mouseRef = useRef<{ x: number; y: number } | null>(null)
 
   const renderTiles = () => {
     const layer = tileLayerRef.current
@@ -52,6 +54,26 @@ export function GameCanvas() {
     }
   }
 
+  const renderGhost = () => {
+    const layer = ghostLayerRef.current
+    if (!layer) return
+    layer.removeChildren()
+    const mouse = mouseRef.current
+    const state = useGameStore.getState()
+    if (!mouse || state.interactionMode !== 'build' || !state.selectedBuildId) return
+
+    const g = new Graphics()
+    g.position.set(mouse.x * CELL_SIZE, mouse.y * CELL_SIZE)
+    if (state.selectedBuildId === 'conveyor') {
+      g.rect(0, 0, CELL_SIZE, CELL_SIZE)
+      g.fill({ color: 0x33ff66, alpha: 0.35 })
+    } else {
+      g.rect(2, 2, CELL_SIZE - 4, CELL_SIZE - 4)
+      g.fill({ color: 0x6cd0ff, alpha: 0.35 })
+    }
+    layer.addChild(g)
+  }
+
   useEffect(() => {
     if (!containerRef.current) return
 
@@ -80,9 +102,12 @@ export function GameCanvas() {
       const gridLayer = new Container()
       const tileLayer = new Container()
       const itemLayer = new Container()
+      const ghostLayer = new Container()
+      ghostLayer.alpha = 0.7
       tileLayerRef.current = tileLayer
       itemLayerRef.current = itemLayer
-      app.stage.addChild(gridLayer, tileLayer, itemLayer)
+      ghostLayerRef.current = ghostLayer
+      app.stage.addChild(gridLayer, tileLayer, itemLayer, ghostLayer)
 
       // Subtle grid lines
       const gridGfx = new Graphics()
@@ -100,6 +125,7 @@ export function GameCanvas() {
       // Pointer -> grid placement
       app.stage.eventMode = 'static'
       app.stage.hitArea = app.screen
+      app.canvas.style.cursor = 'crosshair'
 
       const handlePointerDown = (e: FederatedPointerEvent) => {
         const state = useGameStore.getState()
@@ -123,12 +149,22 @@ export function GameCanvas() {
         }
       }
 
+      const handlePointerMove = (e: FederatedPointerEvent) => {
+        const x = Math.floor(e.global.x / CELL_SIZE)
+        const y = Math.floor(e.global.y / CELL_SIZE)
+        const prev = mouseRef.current
+        if (prev && prev.x === x && prev.y === y) return
+        mouseRef.current = { x, y }
+      }
+
       app.stage.on('pointerdown', handlePointerDown)
+      app.stage.on('pointermove', handlePointerMove)
 
       // Render hook for future animated interpolation
       const unsubscribeRender = onRender(() => {
         renderTiles()
         renderItems()
+        renderGhost()
         app.render()
       })
 
@@ -137,10 +173,12 @@ export function GameCanvas() {
       return () => {
         unsubscribeRender()
         app.stage.off('pointerdown', handlePointerDown)
+        app.stage.off('pointermove', handlePointerMove)
         stopLoop()
         app.destroy()
         appRef.current = null
         tileLayerRef.current = null
+        ghostLayerRef.current = null
       }
     }
 
