@@ -1,8 +1,4 @@
-// A simple complex number representation for qubit payloads
-export interface QubitState {
-  alpha: { re: number; im: number }
-  beta: { re: number; im: number }
-}
+import { C, type Qubit } from './quantum'
 
 export interface Item {
   id: number
@@ -11,7 +7,7 @@ export interface Item {
   targetX?: number
   targetY?: number
   speed: number
-  state: QubitState
+  qubit: Qubit
 }
 
 class ItemManager {
@@ -25,17 +21,25 @@ class ItemManager {
       x,
       y,
       speed: 4.0,
-      state: { alpha: { re: 1, im: 0 }, beta: { re: 0, im: 0 } },
+      qubit: { alpha: C.one, beta: C.zero },
     })
   }
 
-  getAll() {
+  getAll(): Iterable<Item> {
     return this.items.values()
+  }
+
+  destroy(id: number) {
+    this.items.delete(id)
   }
 
   update(
     dt: number,
-    getTileDirection: (x: number, y: number) => { dx: number; dy: number } | null,
+    getTileDirection: (
+      item: Item,
+      x: number,
+      y: number,
+    ) => { dx: number; dy: number } | null,
   ) {
     const deltaSeconds = dt / 1000
     for (const item of this.items.values()) {
@@ -46,7 +50,7 @@ class ItemManager {
         if (dist < 0.05) {
           item.x = gridX
           item.y = gridY
-          const dir = getTileDirection(gridX, gridY)
+          const dir = getTileDirection(item, gridX, gridY)
           if (dir) {
             item.targetX = gridX + dir.dx
             item.targetY = gridY + dir.dy
