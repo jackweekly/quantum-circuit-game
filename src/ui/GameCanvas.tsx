@@ -144,9 +144,13 @@ export function GameCanvas() {
     let destroyed = false
 
     const bootstrap = async () => {
+      const host = containerRef.current
+      if (!host) return
+
       const app = new Application()
       await app.init({
-        resizeTo: window,
+        width: host.clientWidth || 800,
+        height: host.clientHeight || 600,
         backgroundAlpha: 0,
         antialias: true,
       })
