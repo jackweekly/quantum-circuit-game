@@ -16,6 +16,7 @@ class ItemManager {
   private nextId = 1
   public systems = new Map<string, QuantumSystem>()
   private nextSystemId = 1
+  private occupancy = new Map<string, number[]>()
 
   spawn(x: number, y: number) {
     const id = this.nextId++
@@ -46,16 +47,10 @@ class ItemManager {
   }
 
   private isTileBlocked(tx: number, ty: number, excludeId: number) {
-    for (const item of this.items.values()) {
-      if (item.id === excludeId) continue
-      const itemGridX = Math.round(item.x)
-      const itemGridY = Math.round(item.y)
-      const movingToTarget = item.targetX === tx && item.targetY === ty
-      if ((itemGridX === tx && itemGridY === ty) || movingToTarget) {
-        return true
-      }
-    }
-    return false
+    const key = `${tx},${ty}`
+    const occ = this.occupancy.get(key)
+    if (!occ) return false
+    return occ.some((id) => id !== excludeId)
   }
 
   destroy(id: number) {
@@ -97,6 +92,16 @@ class ItemManager {
       y: number,
     ) => { dx: number; dy: number } | null,
   ) {
+    this.occupancy.clear()
+    for (const item of this.items.values()) {
+      const gx = Math.round(item.x)
+      const gy = Math.round(item.y)
+      const key = `${gx},${gy}`
+      const list = this.occupancy.get(key) || []
+      list.push(item.id)
+      this.occupancy.set(key, list)
+    }
+
     const deltaSeconds = dt / 1000
     for (const item of this.items.values()) {
       if (item.targetX === undefined || item.targetY === undefined) {
