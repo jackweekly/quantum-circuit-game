@@ -1,12 +1,118 @@
 [
-  { "id": "and", "name": "AND", "category": "classical", "unlockedAtChapter": 0, "tooltipKey": "gate.and" },
-  { "id": "or", "name": "OR", "category": "classical", "unlockedAtChapter": 0, "tooltipKey": "gate.or" },
-  { "id": "not", "name": "NOT", "category": "classical", "unlockedAtChapter": 0, "tooltipKey": "gate.not" },
-  { "id": "h", "name": "Hadamard", "category": "superposition", "unlockedAtChapter": 1, "tooltipKey": "gate.h" },
-  { "id": "x", "name": "Pauli-X", "category": "superposition", "unlockedAtChapter": 1, "tooltipKey": "gate.x" },
-  { "id": "z", "name": "Pauli-Z", "category": "interference", "unlockedAtChapter": 3, "tooltipKey": "gate.z" },
-  { "id": "cnot", "name": "CNOT", "category": "entanglement", "unlockedAtChapter": 2, "tooltipKey": "gate.cnot" },
-  { "id": "s", "name": "Phase S", "category": "interference", "unlockedAtChapter": 3, "tooltipKey": "gate.s" },
-  { "id": "t", "name": "Phase T", "category": "interference", "unlockedAtChapter": 3, "tooltipKey": "gate.t" },
-  { "id": "measure", "name": "Measure", "category": "measurement", "unlockedAtChapter": 4, "tooltipKey": "gate.measure" }
+  {
+    "id": "and",
+    "name": "AND",
+    "sprite": "gate_and",
+    "cost": 4,
+    "category": "classical",
+    "unlockedAtChapter": 0,
+    "tooltipKey": "gate.and",
+    "behavior": { "type": "classical" },
+    "visualOperation": "logic"
+  },
+  {
+    "id": "or",
+    "name": "OR",
+    "sprite": "gate_or",
+    "cost": 4,
+    "category": "classical",
+    "unlockedAtChapter": 0,
+    "tooltipKey": "gate.or",
+    "behavior": { "type": "classical" },
+    "visualOperation": "logic"
+  },
+  {
+    "id": "not",
+    "name": "NOT",
+    "sprite": "gate_not",
+    "cost": 3,
+    "category": "classical",
+    "unlockedAtChapter": 0,
+    "tooltipKey": "gate.not",
+    "behavior": { "type": "classical" },
+    "visualOperation": "logic"
+  },
+  {
+    "id": "h",
+    "name": "Hadamard",
+    "sprite": "gate_h",
+    "cost": 10,
+    "category": "superposition",
+    "unlockedAtChapter": 1,
+    "tooltipKey": "gate.h",
+    "behavior": {
+      "type": "unitary",
+      "matrix": [
+        [0.70710678, 0.70710678],
+        [0.70710678, -0.70710678]
+      ]
+    },
+    "visualOperation": "rotate_xz"
+  },
+  {
+    "id": "x",
+    "name": "Pauli-X",
+    "sprite": "gate_x",
+    "cost": 8,
+    "category": "superposition",
+    "unlockedAtChapter": 1,
+    "tooltipKey": "gate.x",
+    "behavior": { "type": "unitary", "matrix": [[0, 1], [1, 0]] },
+    "visualOperation": "rotate_x"
+  },
+  {
+    "id": "z",
+    "name": "Pauli-Z",
+    "sprite": "gate_z",
+    "cost": 8,
+    "category": "interference",
+    "unlockedAtChapter": 3,
+    "tooltipKey": "gate.z",
+    "behavior": { "type": "unitary", "matrix": [[1, 0], [0, -1]] },
+    "visualOperation": "rotate_z"
+  },
+  {
+    "id": "cnot",
+    "name": "CNOT",
+    "sprite": "gate_cnot",
+    "cost": 20,
+    "category": "entanglement",
+    "unlockedAtChapter": 2,
+    "tooltipKey": "gate.cnot",
+    "behavior": { "type": "controlled", "controlCount": 1 },
+    "visualOperation": "link"
+  },
+  {
+    "id": "s",
+    "name": "Phase S",
+    "sprite": "gate_s",
+    "cost": 12,
+    "category": "interference",
+    "unlockedAtChapter": 3,
+    "tooltipKey": "gate.s",
+    "behavior": { "type": "unitary", "matrix": [[1, 0], [0, "i"]] },
+    "visualOperation": "rotate_z"
+  },
+  {
+    "id": "t",
+    "name": "Phase T",
+    "sprite": "gate_t",
+    "cost": 14,
+    "category": "interference",
+    "unlockedAtChapter": 3,
+    "tooltipKey": "gate.t",
+    "behavior": { "type": "unitary", "matrix": [[1, 0], [0, "e^(iπ/4)"]] },
+    "visualOperation": "rotate_z"
+  },
+  {
+    "id": "measure",
+    "name": "Measure",
+    "sprite": "gate_measure",
+    "cost": 6,
+    "category": "measurement",
+    "unlockedAtChapter": 4,
+    "tooltipKey": "gate.measure",
+    "behavior": { "type": "measurement" },
+    "visualOperation": "collapse"
+  }
 ]

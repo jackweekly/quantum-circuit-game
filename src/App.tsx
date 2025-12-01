@@ -1,4 +1,5 @@
 import './App.css'
+import { GameCanvas } from './ui/GameCanvas'
 
 function App() {
   return (
@@ -17,6 +18,14 @@ function App() {
           <button className="cta ghost">View Design Doc</button>
         </div>
       </header>
+
+      <section className="panel">
+        <h2>Factory canvas (stub)</h2>
+        <p className="lede">
+          Pixi-rendered grid placeholder wired to the fixed-step loop (20 TPS sim, interpolated render).
+        </p>
+        <GameCanvas />
+      </section>
 
       <section className="panel">
         <h2>Campaign arc</h2>
