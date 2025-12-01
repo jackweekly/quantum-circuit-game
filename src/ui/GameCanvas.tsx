@@ -132,7 +132,8 @@ export function GameCanvas() {
     layer.removeChildren()
 
     for (const item of worldItems.getAll()) {
-      const prob1 = item.qubit.getExcitationProbability()
+      const system = worldItems.systems.get(item.systemId)
+      const prob1 = system ? system.getExcitationProbability() : 0
       let color = 0x6cd0ff
       if (prob1 > 0.9) color = 0xff00ff
       else if (prob1 > 0.4) color = 0xffffff

@@ -1,4 +1,4 @@
-import { QuantumState, type Qubit } from './quantum'
+import { QuantumSystem } from './quantum'
 
 export interface Item {
   id: number
@@ -7,21 +7,27 @@ export interface Item {
   targetX?: number
   targetY?: number
   speed: number
-  qubit: Qubit
+  systemId: string
+  qubitIndex: number
 }
 
 class ItemManager {
   private items = new Map<number, Item>()
   private nextId = 1
+  public systems = new Map<string, QuantumSystem>()
+  private nextSystemId = 1
 
   spawn(x: number, y: number) {
     const id = this.nextId++
+    const sysId = `sys_${this.nextSystemId++}`
+    this.systems.set(sysId, new QuantumSystem())
     this.items.set(id, {
       id,
       x,
       y,
       speed: 4.0,
-      qubit: new QuantumState(),
+      systemId: sysId,
+      qubitIndex: 0,
     })
   }
 
@@ -29,8 +35,30 @@ class ItemManager {
     return this.items.values()
   }
 
+  private isTileBlocked(tx: number, ty: number, excludeId: number) {
+    for (const item of this.items.values()) {
+      if (item.id === excludeId) continue
+      const itemGridX = Math.round(item.x)
+      const itemGridY = Math.round(item.y)
+      const movingToTarget = item.targetX === tx && item.targetY === ty
+      if ((itemGridX === tx && itemGridY === ty) || movingToTarget) {
+        return true
+      }
+    }
+    return false
+  }
+
   destroy(id: number) {
-    this.items.delete(id)
+    const item = this.items.get(id)
+    if (item) {
+      this.systems.delete(item.systemId)
+      this.items.delete(id)
+    }
+  }
+
+  destroyAll() {
+    this.items.clear()
+    this.systems.clear()
   }
 
   update(
@@ -52,8 +80,15 @@ class ItemManager {
           item.y = gridY
           const dir = getTileDirection(item, gridX, gridY)
           if (dir) {
-            item.targetX = gridX + dir.dx
-            item.targetY = gridY + dir.dy
+            const nextX = gridX + dir.dx
+            const nextY = gridY + dir.dy
+            if (!this.isTileBlocked(nextX, nextY, item.id)) {
+              item.targetX = nextX
+              item.targetY = nextY
+            } else {
+              item.targetX = undefined
+              item.targetY = undefined
+            }
           }
         }
       }

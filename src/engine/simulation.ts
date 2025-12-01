@@ -1,7 +1,6 @@
 import { worldGrid, type Direction } from './grid'
 import { worldItems } from './items'
 import { getGate } from '../content/registry'
-import { applyGate, measure } from './quantum'
 import { useGameStore } from '../state/useGameStore'
 
 const DIR_VECTORS: Record<Direction, { dx: number; dy: number }> = {
@@ -49,21 +48,19 @@ export function updateSimulation(dt: number) {
       if (dist < 0.2 && !processedLog.has(key)) {
         const gateDef = getGate(tile.gateId)
         if (gateDef && gateDef.behavior.type === 'unitary') {
-          item.qubit = applyGate(item.qubit, gateDef.behavior.matrix)
+          const system = worldItems.systems.get(item.systemId)
+          if (system) {
+            system.applyGate(gateDef.behavior.matrix, item.qubitIndex)
+          }
         }
         processedLog.set(key, true)
         if (processedLog.size > 1000) processedLog.clear()
       }
     }
 
-    if (tile && tile.kind === 'scanner') {
-      measure(item.qubit)
-      worldItems.destroy(item.id)
-      return null
-    }
-
     if (tile && tile.kind === 'sink') {
-      const prob1 = item.qubit.getExcitationProbability()
+      const system = worldItems.systems.get(item.systemId)
+      const prob1 = system ? system.getExcitationProbability() : 0
       if (prob1 > 0.9) {
         useGameStore.getState().incrementScore(1)
       }
