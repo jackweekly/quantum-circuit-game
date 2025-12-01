@@ -103,3 +103,30 @@
   color: #fff;
   box-shadow: 0 0 15px rgba(108, 208, 255, 0.3);
 }
+
+.inspector {
+  position: absolute;
+  right: 1rem;
+  top: 4rem;
+  background: rgba(16, 22, 38, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  backdrop-filter: blur(8px);
+  color: #e8f0ff;
+  font-size: 0.9rem;
+  display: grid;
+  gap: 0.3rem;
+  max-width: 240px;
+}
+
+.inspector-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.inspector-row.small {
+  font-size: 0.8rem;
+  color: #c8d6f2;
+}

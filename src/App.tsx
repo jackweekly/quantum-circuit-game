@@ -1,6 +1,7 @@
 import './App.css'
 import { GameCanvas } from './ui/GameCanvas'
 import { BuildToolbar } from './ui/hud/BuildToolbar'
+import { Inspector } from './ui/hud/Inspector'
 import { useGameStore } from './state/useGameStore'
 import { useEffect } from 'react'
 import { loadLevel, type LevelTile } from './engine/levelLoader'
@@ -34,6 +35,7 @@ function App() {
 
       <div className="viewport">
         <GameCanvas />
+        <Inspector />
       </div>
 
       <BuildToolbar />

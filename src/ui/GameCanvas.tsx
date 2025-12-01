@@ -273,6 +273,12 @@ export function GameCanvas() {
           performAction(gridX, gridY, dragButton.current)
         }
 
+        // dispatch inspect coordinates for inspector panel
+        const evt = new CustomEvent('inspector-click', { detail: null })
+        ;(evt as any).x = gridX
+        ;(evt as any).y = gridY
+        window.dispatchEvent(evt)
+
         const ghostLayer = ghostLayerRef.current
         if (ghostLayer) {
           ghostLayer.removeChildren()
