@@ -1,0 +1,40 @@
+{
+  "chapters": [
+    {
+      "id": "ch0",
+      "title": "Classical Warmup",
+      "contracts": [
+        {
+          "id": "contract-logic-routing",
+          "goal": "Deliver AND/OR/NOT circuits at 10 per min",
+          "constraints": ["no teleporters"],
+          "medalTargets": { "bronze": 5, "silver": 8, "gold": 10 }
+        }
+      ]
+    },
+    {
+      "id": "ch1",
+      "title": "Superposition",
+      "contracts": [
+        {
+          "id": "contract-superposed-bus",
+          "goal": "Use H to reduce wire count to ship 20 circuits/min",
+          "constraints": [],
+          "medalTargets": { "bronze": 10, "silver": 15, "gold": 20 }
+        }
+      ]
+    },
+    {
+      "id": "ch2",
+      "title": "Entanglement",
+      "contracts": [
+        {
+          "id": "contract-bell-relay",
+          "goal": "Bell pair relay between outposts",
+          "constraints": ["max 3 control linkers"],
+          "medalTargets": { "bronze": 6, "silver": 10, "gold": 14 }
+        }
+      ]
+    }
+  ]
+}

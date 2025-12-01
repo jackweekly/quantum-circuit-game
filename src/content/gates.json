@@ -1,0 +1,12 @@
+[
+  { "id": "and", "name": "AND", "category": "classical", "unlockedAtChapter": 0, "tooltipKey": "gate.and" },
+  { "id": "or", "name": "OR", "category": "classical", "unlockedAtChapter": 0, "tooltipKey": "gate.or" },
+  { "id": "not", "name": "NOT", "category": "classical", "unlockedAtChapter": 0, "tooltipKey": "gate.not" },
+  { "id": "h", "name": "Hadamard", "category": "superposition", "unlockedAtChapter": 1, "tooltipKey": "gate.h" },
+  { "id": "x", "name": "Pauli-X", "category": "superposition", "unlockedAtChapter": 1, "tooltipKey": "gate.x" },
+  { "id": "z", "name": "Pauli-Z", "category": "interference", "unlockedAtChapter": 3, "tooltipKey": "gate.z" },
+  { "id": "cnot", "name": "CNOT", "category": "entanglement", "unlockedAtChapter": 2, "tooltipKey": "gate.cnot" },
+  { "id": "s", "name": "Phase S", "category": "interference", "unlockedAtChapter": 3, "tooltipKey": "gate.s" },
+  { "id": "t", "name": "Phase T", "category": "interference", "unlockedAtChapter": 3, "tooltipKey": "gate.t" },
+  { "id": "measure", "name": "Measure", "category": "measurement", "unlockedAtChapter": 4, "tooltipKey": "gate.measure" }
+]
