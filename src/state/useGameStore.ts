@@ -3,6 +3,16 @@ import { type Direction } from '../engine/grid'
 
 export type GameMode = 'campaign' | 'sandbox'
 export type InteractionMode = 'inspect' | 'build' | 'erase'
+export type TargetState = 'zero' | 'one' | 'plus'
+
+export interface Contract {
+  id: string
+  goal: string
+  target: TargetState
+  required: number
+  delivered: number
+  rewardPerUnit: number
+}
 
 export interface GameState {
   mode: GameMode
@@ -13,6 +23,8 @@ export interface GameState {
   buildDirection: Direction
   score: number
   goal: string
+  credits: number
+  contract: Contract | null
   setMode: (mode: GameMode) => void
   setInteractionMode: (mode: InteractionMode) => void
   setSelectedBuildId: (id: string | null) => void
@@ -20,9 +32,14 @@ export interface GameState {
   togglePause: () => void
   advanceTick: () => void
   incrementScore: (amount: number) => void
+  addCredits: (amount: number) => void
+  spendCredits: (amount: number) => boolean
+  setContract: (contract: Contract | null) => void
+  incrementDelivered: () => void
+  setGoalText: (text: string) => void
 }
 
-export const useGameStore = create<GameState>((set) => ({
+export const useGameStore = create<GameState>((set, get) => ({
   mode: 'campaign',
   tick: 0,
   isPaused: false,
@@ -31,6 +48,8 @@ export const useGameStore = create<GameState>((set) => ({
   buildDirection: 'east',
   score: 0,
   goal: 'Deliver 10 |1> Qubits (Purple)',
+  credits: 100,
+  contract: null,
   setMode: (mode) => set({ mode }),
   setInteractionMode: (mode) => set({ interactionMode: mode }),
   setSelectedBuildId: (id) =>
@@ -42,4 +61,18 @@ export const useGameStore = create<GameState>((set) => ({
   togglePause: () => set((state) => ({ isPaused: !state.isPaused })),
   advanceTick: () => set((state) => ({ tick: state.tick + 1 })),
   incrementScore: (amount) => set((state) => ({ score: state.score + amount })),
+  addCredits: (amount) => set((state) => ({ credits: state.credits + amount })),
+  spendCredits: (amount) => {
+    const { credits } = get()
+    if (credits < amount) return false
+    set({ credits: credits - amount })
+    return true
+  },
+  setContract: (contract) => set({ contract }),
+  incrementDelivered: () =>
+    set((state) => {
+      if (!state.contract) return state
+      return { contract: { ...state.contract, delivered: state.contract.delivered + 1 } }
+    }),
+  setGoalText: (text) => set({ goal: text }),
 }))

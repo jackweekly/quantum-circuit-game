@@ -127,8 +127,17 @@ export function updateSimulation(dt: number) {
     if (tile && tile.kind === 'sink') {
       const system = worldItems.systems.get(item.systemId)
       const prob1 = system ? system.getExcitationProbability() : 0
-      if (prob1 > 0.9) {
-        useGameStore.getState().incrementScore(1)
+      const contract = useGameStore.getState().contract
+      const matches =
+        contract &&
+        ((contract.target === 'one' && prob1 > 0.9) ||
+          (contract.target === 'zero' && prob1 < 0.1) ||
+          (contract.target === 'plus' && prob1 > 0.4 && prob1 < 0.6))
+      if (matches) {
+        useGameStore.getState().incrementDelivered()
+        if (contract.rewardPerUnit) {
+          useGameStore.getState().addCredits(contract.rewardPerUnit)
+        }
       }
       worldItems.destroy(item.id)
       return null
