@@ -28,6 +28,7 @@ export function GameCanvas() {
   const isDraggingAction = useRef(false)
   const lastMouse = useRef({ x: 0, y: 0 })
   const dragButton = useRef<number | null>(null)
+  const zoomRef = useRef(1)
 
   const drawGateSprite = (g: Graphics, _id: string | undefined, size: number) => {
     g.rect(2, 2, size - 4, size - 4)
@@ -77,15 +78,20 @@ export function GameCanvas() {
     worldGrid.forEach(({ x, y }, tile) => {
       const g = new Graphics()
       if (tile.kind === 'conveyor') {
-        g.rect(0, 0, CELL_SIZE, CELL_SIZE)
-        g.fill(0x33ff66)
-        const dirOffsets: Record<string, number> = { north: 0, east: 1, south: 2, west: 3 }
-        const rotation = ((dirOffsets[tile.direction || 'east'] || 0) * Math.PI) / 2
-        g.rect(-4, -6, 8, 12)
-        g.fill(0x0a0f1a)
-        g.rotation = rotation
-        g.position.set(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE / 2)
+        g.rect(0, 0, CELL_SIZE, CELL_SIZE).fill(0x33ff66)
+        const cx = CELL_SIZE / 2
+        const cy = CELL_SIZE / 2
+        const arrow = new Graphics()
+        arrow.moveTo(cx - 6, cy - 6).lineTo(cx + 10, cy).lineTo(cx - 6, cy + 6).lineTo(cx - 6, cy - 6)
+        arrow.fill(0x0a0f1a)
+        const dir = tile.direction || 'east'
+        if (dir === 'north') arrow.rotation = -Math.PI / 2
+        if (dir === 'south') arrow.rotation = Math.PI / 2
+        if (dir === 'west') arrow.rotation = Math.PI
+        arrow.position.set(x * CELL_SIZE, y * CELL_SIZE)
+        g.position.set(x * CELL_SIZE, y * CELL_SIZE)
         layer.addChild(g)
+        layer.addChild(arrow)
       } else if (tile.kind === 'printer') {
         g.position.set(x * CELL_SIZE, y * CELL_SIZE)
         drawGateSprite(g, tile.gateId, CELL_SIZE)
@@ -250,8 +256,14 @@ export function GameCanvas() {
             const g = new Graphics()
 
             if (state.selectedBuildId === 'conveyor') {
-              g.rect(0, 0, CELL_SIZE, CELL_SIZE)
-              g.fill({ color: 0x33ff66, alpha: 0.5 })
+              g.rect(0, 0, CELL_SIZE, CELL_SIZE).fill({ color: 0x33ff66, alpha: 0.5 })
+              const arrow = new Graphics()
+              const cx = CELL_SIZE / 2
+              const cy = CELL_SIZE / 2
+              arrow.moveTo(cx - 6, cy - 6).lineTo(cx + 10, cy).lineTo(cx - 6, cy + 6).lineTo(cx - 6, cy - 6)
+              arrow.fill({ color: 0x0a0f1a, alpha: 0.6 })
+              arrow.position.set(0, 0)
+              g.addChild(arrow)
             } else {
               drawGateSprite(g, state.selectedBuildId, CELL_SIZE)
               const text = new Text({
@@ -269,6 +281,25 @@ export function GameCanvas() {
         }
       })
 
+      const handleWheel = (e: WheelEvent) => {
+        const viewport = viewportRef.current
+        if (!viewport) return
+        e.preventDefault()
+        const scaleBefore = zoomRef.current
+        const factor = e.deltaY > 0 ? 0.9 : 1.1
+        const newScale = Math.min(2.5, Math.max(0.4, scaleBefore * factor))
+        const rect = app.canvas.getBoundingClientRect()
+        const mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+        const worldPosBefore = viewport.toLocal(mouse)
+        viewport.scale.set(newScale)
+        zoomRef.current = newScale
+        const worldPosAfter = viewport.toLocal(mouse)
+        viewport.position.x += (worldPosAfter.x - worldPosBefore.x) * newScale
+        viewport.position.y += (worldPosAfter.y - worldPosBefore.y) * newScale
+      }
+
+      app.canvas.addEventListener('wheel', handleWheel, { passive: false })
+
       const unsubscribeRender = onRender(() => {
         renderGrid(app)
         renderTiles()
@@ -283,6 +314,7 @@ export function GameCanvas() {
         stopLoop()
         app.destroy()
         appRef.current = null
+        app.canvas.removeEventListener('wheel', handleWheel)
       }
     }
 
