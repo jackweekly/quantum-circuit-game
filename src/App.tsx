@@ -15,6 +15,7 @@ function App() {
   const contract = useGameStore((s) => s.contract)
   const setContract = useGameStore((s) => s.setContract)
   const setGoalText = useGameStore((s) => s.setGoalText)
+  const setAvailableBuilds = useGameStore((s) => s.setAvailableBuilds)
 
   useEffect(() => {
     const chapter = campaign.chapters?.[0]
@@ -51,8 +52,11 @@ function App() {
           rewardPerUnit: firstContract.rewardPerUnit || 5,
         })
       }
+      if (Array.isArray(chapter.availableBuilds)) {
+        setAvailableBuilds(chapter.availableBuilds)
+      }
     }
-  }, [setContract, setGoalText])
+  }, [setContract, setGoalText, setAvailableBuilds])
 
   return (
     <div className="shell">

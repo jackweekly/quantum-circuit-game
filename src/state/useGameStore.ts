@@ -12,6 +12,7 @@ export interface Contract {
   required: number
   delivered: number
   rewardPerUnit: number
+  completed?: boolean
 }
 
 export interface GameState {
@@ -25,6 +26,7 @@ export interface GameState {
   goal: string
   credits: number
   contract: Contract | null
+  availableBuilds: string[]
   setMode: (mode: GameMode) => void
   setInteractionMode: (mode: InteractionMode) => void
   setSelectedBuildId: (id: string | null) => void
@@ -37,6 +39,7 @@ export interface GameState {
   setContract: (contract: Contract | null) => void
   incrementDelivered: () => void
   setGoalText: (text: string) => void
+  setAvailableBuilds: (ids: string[]) => void
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -50,6 +53,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   goal: 'Deliver 10 |1> Qubits (Purple)',
   credits: 100,
   contract: null,
+  availableBuilds: ['conveyor', 'h', 'x', 'z', 'cnot'],
   setMode: (mode) => set({ mode }),
   setInteractionMode: (mode) => set({ interactionMode: mode }),
   setSelectedBuildId: (id) =>
@@ -72,7 +76,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   incrementDelivered: () =>
     set((state) => {
       if (!state.contract) return state
-      return { contract: { ...state.contract, delivered: state.contract.delivered + 1 } }
+      const delivered = state.contract.delivered + 1
+      const completed = delivered >= state.contract.required
+      return { contract: { ...state.contract, delivered, completed } }
     }),
   setGoalText: (text) => set({ goal: text }),
+  setAvailableBuilds: (ids) => set({ availableBuilds: ids }),
 }))

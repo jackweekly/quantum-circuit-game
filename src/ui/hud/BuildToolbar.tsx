@@ -2,9 +2,10 @@ import { useGameStore } from '../../state/useGameStore'
 import { listGates } from '../../content/registry'
 
 export function BuildToolbar() {
-  const { selectedBuildId, interactionMode, setSelectedBuildId, setInteractionMode, setBuildDirection } =
+  const { selectedBuildId, interactionMode, setSelectedBuildId, setInteractionMode, setBuildDirection, availableBuilds } =
     useGameStore()
-  const gates = listGates()
+  const gates = listGates().filter((g) => availableBuilds.includes(g.id))
+  const canBuild = (id: string) => availableBuilds.includes(id)
 
   return (
     <div className="hud-bottom">
@@ -30,6 +31,7 @@ export function BuildToolbar() {
           className={`tool-btn ${selectedBuildId === 'conveyor' ? 'active' : ''}`}
           onClick={() => setSelectedBuildId('conveyor')}
           title="Conveyor Belt"
+          disabled={!canBuild('conveyor')}
         >
           ⮕
         </button>
@@ -54,6 +56,7 @@ export function BuildToolbar() {
             className={`tool-btn ${selectedBuildId === gate.id ? 'active' : ''}`}
             onClick={() => setSelectedBuildId(gate.id)}
             title={gate.name}
+            disabled={!canBuild(gate.id)}
           >
             {gate.id.toUpperCase().slice(0, 2)}
           </button>

@@ -171,6 +171,12 @@
   box-shadow: 0 0 15px rgba(108, 208, 255, 0.3);
 }
 
+.tool-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .inspector {
   position: absolute;
   right: 1rem;

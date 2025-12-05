@@ -19,6 +19,7 @@ export interface LevelData {
     required: number
     rewardPerUnit: number
   }
+  availableBuilds?: string[]
 }
 
 export function loadLevel(level: LevelData) {
