@@ -10,7 +10,10 @@
       "contracts": [
         {
           "id": "contract-logic-routing",
-          "goal": "Deliver AND/OR/NOT circuits at 10 per min",
+          "goal": "Deliver |1> qubits",
+          "target": "one",
+          "required": 5,
+          "rewardPerUnit": 5,
           "constraints": ["no teleporters"],
           "medalTargets": { "bronze": 5, "silver": 8, "gold": 10 }
         }

@@ -171,6 +171,10 @@ export function GameCanvas() {
     }
     if (button === 0 && state.interactionMode === 'build' && state.selectedBuildId) {
       buildDirRef.current = state.buildDirection
+      const costMap: Record<string, number> = { conveyor: 1, cnot: 8 }
+      const cost = costMap[state.selectedBuildId] ?? 5
+      const ok = state.spendCredits ? state.spendCredits(cost) : true
+      if (!ok) return
       if (state.selectedBuildId === 'conveyor') {
         worldGrid.set(gridX, gridY, { kind: 'conveyor', direction: buildDirRef.current })
       } else {

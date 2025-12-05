@@ -12,6 +12,13 @@ export interface LevelTile {
 export interface LevelData {
   layout?: LevelTile[]
   goal?: string
+  contract?: {
+    id: string
+    goal: string
+    target: 'zero' | 'one' | 'plus'
+    required: number
+    rewardPerUnit: number
+  }
 }
 
 export function loadLevel(level: LevelData) {
