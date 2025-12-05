@@ -55,30 +55,61 @@ function App() {
   }, [setContract, setGoalText])
 
   return (
-    <div className="game-layout">
-      <div className="hud-top">
-        <div className="hud-title">
-          Quantum Foundry <span style={{ opacity: 0.5 }}>// PROTOTYPE</span>
+    <div className="shell">
+      <header className="top-bar">
+        <div className="logo">
+          Quantum Foundry <span className="dim">// PROTOTYPE</span>
         </div>
-        <div className="hud-stats">
-          <span>Goal: {goal}</span>
-          {contract && (
-            <span>
-              Contract: {contract.delivered}/{contract.required} ({contract.target})
-            </span>
-          )}
-          <span>Credits: {credits}</span>
-          <span>Score: {score}</span>
-          <span>TICK: {tick}</span>
+        <div className="top-stats">
+          <div className="pill">Credits: {credits}</div>
+          <div className="pill">Score: {score}</div>
+          <div className="pill">Tick: {tick}</div>
         </div>
-      </div>
+      </header>
 
-      <div className="viewport">
-        <GameCanvas />
-        <Inspector />
-      </div>
+      <main className="workspace">
+        <aside className="left-rail">
+          <div className="panel compact">
+            <div className="panel-title">Contract</div>
+            <div className="goal-text">{goal}</div>
+            {contract && (
+              <>
+                <div className="progress-row">
+                  <span>
+                    {contract.delivered}/{contract.required} ({contract.target})
+                  </span>
+                  <span className="dim">+{contract.rewardPerUnit}c each</span>
+                </div>
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: `${Math.min(100, (contract.delivered / contract.required) * 100)}%`,
+                    }}
+                  />
+                </div>
+              </>
+            )}
+          </div>
 
-      <BuildToolbar />
+          <div className="panel">
+            <div className="panel-title">Build</div>
+            <BuildToolbar />
+          </div>
+
+          <div className="panel compact">
+            <div className="panel-title">Tips</div>
+            <div className="tip">Middle-drag to pan, scroll to zoom.</div>
+            <div className="tip">Rotate with the arrow buttons in the build bar.</div>
+            <div className="tip">Place conveyors then gates; sinks pay on correct outputs.</div>
+          </div>
+        </aside>
+
+        <section className="viewport">
+          <GameCanvas />
+          <Inspector />
+        </section>
+      </main>
     </div>
   )
 }
