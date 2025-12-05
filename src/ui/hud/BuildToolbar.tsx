@@ -1,6 +1,14 @@
 import { useGameStore } from '../../state/useGameStore'
 import { listGates } from '../../content/registry'
 
+const COSTS: Record<string, number> = {
+  conveyor: 1,
+  h: 4,
+  x: 6,
+  z: 6,
+  cnot: 12,
+}
+
 export function BuildToolbar() {
   const { selectedBuildId, interactionMode, setSelectedBuildId, setInteractionMode, setBuildDirection, availableBuilds } =
     useGameStore()
@@ -58,7 +66,8 @@ export function BuildToolbar() {
             title={gate.name}
             disabled={!canBuild(gate.id)}
           >
-            {gate.id.toUpperCase().slice(0, 2)}
+            <span>{gate.id.toUpperCase().slice(0, 2)}</span>
+            <small className="dim">({COSTS[gate.id] ?? 5})</small>
           </button>
         ))}
       </div>

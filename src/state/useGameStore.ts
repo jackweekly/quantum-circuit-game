@@ -40,6 +40,7 @@ export interface GameState {
   incrementDelivered: () => void
   setGoalText: (text: string) => void
   setAvailableBuilds: (ids: string[]) => void
+  resetContractProgress: () => void
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -82,4 +83,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     }),
   setGoalText: (text) => set({ goal: text }),
   setAvailableBuilds: (ids) => set({ availableBuilds: ids }),
+  resetContractProgress: () =>
+    set((state) => {
+      if (!state.contract) return state
+      return { contract: { ...state.contract, delivered: 0, completed: false } }
+    }),
 }))

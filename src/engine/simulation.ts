@@ -130,6 +130,7 @@ export function updateSimulation(dt: number) {
       const contract = useGameStore.getState().contract
       const matches =
         contract &&
+        !contract.completed &&
         ((contract.target === 'one' && prob1 > 0.9) ||
           (contract.target === 'zero' && prob1 < 0.1) ||
           (contract.target === 'plus' && prob1 > 0.4 && prob1 < 0.6))
