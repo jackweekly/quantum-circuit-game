@@ -29,6 +29,7 @@ export interface GameState {
   availableBuilds: string[]
   contracts: Contract[]
   contractIndex: number
+  bankrupt: boolean
   setMode: (mode: GameMode) => void
   setInteractionMode: (mode: InteractionMode) => void
   setSelectedBuildId: (id: string | null) => void
@@ -47,6 +48,7 @@ export interface GameState {
   resetLevel: () => void
   setContracts: (contracts: Contract[]) => void
   nextContract: () => void
+  setBankrupt: (v: boolean) => void
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -63,6 +65,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   availableBuilds: ['conveyor', 'h', 'x', 'z', 'cnot'],
   contracts: [],
   contractIndex: 0,
+  bankrupt: false,
   setMode: (mode) => set({ mode }),
   setInteractionMode: (mode) => set({ interactionMode: mode }),
   setSelectedBuildId: (id) =>
@@ -77,7 +80,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   addCredits: (amount) => set((state) => ({ credits: state.credits + amount })),
   spendCredits: (amount) => {
     const { credits } = get()
-    if (credits < amount) return false
+    if (credits < amount) {
+      set({ bankrupt: true })
+      return false
+    }
     set({ credits: credits - amount })
     return true
   },
@@ -107,6 +113,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       credits: 100,
       score: 0,
       tick: 0,
+      bankrupt: false,
     })),
   setContracts: (contracts) =>
     set({
@@ -123,4 +130,5 @@ export const useGameStore = create<GameState>((set, get) => ({
         contract: { ...state.contracts[nextIndex], delivered: 0, completed: false },
       }
     }),
+  setBankrupt: (v) => set({ bankrupt: v }),
 }))

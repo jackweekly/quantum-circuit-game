@@ -16,6 +16,7 @@ function App() {
   const contractCompleted = useGameStore((s) => s.contract?.completed)
   const contracts = useGameStore((s) => s.contracts)
   const contractIndex = useGameStore((s) => s.contractIndex)
+  const bankrupt = useGameStore((s) => s.bankrupt)
 
   const setGoalText = useGameStore((s) => s.setGoalText)
   const setAvailableBuilds = useGameStore((s) => s.setAvailableBuilds)
@@ -23,6 +24,7 @@ function App() {
   const nextContract = useGameStore((s) => s.nextContract)
   const resetLevel = useGameStore((s) => s.resetLevel)
   const setContract = useGameStore((s) => s.setContract)
+  const setBankrupt = useGameStore((s) => s.setBankrupt)
 
   const chapter = campaign.chapters?.[0]
 
@@ -147,6 +149,26 @@ function App() {
                   Replay
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {bankrupt && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>Out of Credits</h2>
+            <p>Reset to try again with fresh funds.</p>
+            <div className="button-row">
+              <button
+                className="btn"
+                onClick={() => {
+                  setBankrupt(false)
+                  resetLevel()
+                }}
+              >
+                Reset Level
+              </button>
             </div>
           </div>
         </div>
