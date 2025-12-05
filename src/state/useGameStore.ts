@@ -41,6 +41,8 @@ export interface GameState {
   setGoalText: (text: string) => void
   setAvailableBuilds: (ids: string[]) => void
   resetContractProgress: () => void
+  completeContract: () => void
+  resetLevel: () => void
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -88,4 +90,18 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (!state.contract) return state
       return { contract: { ...state.contract, delivered: 0, completed: false } }
     }),
+  completeContract: () =>
+    set((state) => {
+      if (!state.contract) return state
+      return { contract: { ...state.contract, completed: true, delivered: state.contract.required } }
+    }),
+  resetLevel: () =>
+    set((state) => ({
+      contract: state.contract
+        ? { ...state.contract, delivered: 0, completed: false }
+        : null,
+      credits: 100,
+      score: 0,
+      tick: 0,
+    })),
 }))

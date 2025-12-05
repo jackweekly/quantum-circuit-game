@@ -13,7 +13,8 @@ const DIR_VECTORS: Record<Direction, { dx: number; dy: number }> = {
 
 const processedLog = new Map<string, true>()
 let spawnTimer = 0
-const SPAWN_RATE = 4000
+const SPAWN_RATE = 500
+const splitterToggle = new Map<string, boolean>()
 
 function findExitDirection(x: number, y: number, tileDir?: Direction): Direction | undefined {
   if (tileDir) return tileDir
@@ -141,6 +142,36 @@ export function updateSimulation(dt: number) {
         }
       }
       worldItems.destroy(item.id)
+      return null
+    }
+    if (tile && tile.kind === 'splitter') {
+      const primary = tile.direction || 'east'
+      const secondary = primary === 'east' ? 'south' : primary === 'south' ? 'west' : primary === 'west' ? 'north' : 'east'
+      const key = `${x},${y}`
+      const toggle = splitterToggle.get(key) || false
+      splitterToggle.set(key, !toggle)
+      return DIR_VECTORS[toggle ? primary : secondary]
+    }
+    if (tile && tile.kind === 'merger') {
+      // merge simply forwards in its direction or any connected belt
+      const dir = tile.direction || findExitDirection(x, y, undefined)
+      if (dir) return DIR_VECTORS[dir]
+    }
+    if (tile && tile.kind === 'detector') {
+      const system = worldItems.systems.get(item.systemId)
+      if (system) {
+        const resultIndex = system.measure()
+        system.collapseToBasis(resultIndex)
+        if (resultIndex === 0) {
+          const dir = tile.direction || 'east'
+          return DIR_VECTORS[dir]
+        } else {
+          // secondary path: rotate 90 deg clockwise from primary
+          const dir = tile.direction || 'east'
+          const secondary = dir === 'east' ? 'south' : dir === 'south' ? 'west' : dir === 'west' ? 'north' : 'east'
+          return DIR_VECTORS[secondary]
+        }
+      }
       return null
     }
 

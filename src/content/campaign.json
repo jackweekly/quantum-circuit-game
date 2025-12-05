@@ -7,7 +7,7 @@
         { "x": 2, "y": 5, "kind": "source", "direction": "east" },
         { "x": 12, "y": 5, "kind": "sink", "direction": "east" }
       ],
-      "availableBuilds": ["conveyor", "h", "x", "cnot"],
+      "availableBuilds": ["conveyor", "h", "x", "cnot", "detector", "splitter", "merger"],
       "contracts": [
         {
           "id": "contract-logic-routing",

@@ -16,6 +16,7 @@ function App() {
   const setContract = useGameStore((s) => s.setContract)
   const setGoalText = useGameStore((s) => s.setGoalText)
   const setAvailableBuilds = useGameStore((s) => s.setAvailableBuilds)
+  const resetLevel = useGameStore((s) => s.resetLevel)
 
   useEffect(() => {
     const chapter = campaign.chapters?.[0]
@@ -106,6 +107,9 @@ function App() {
             <div className="tip">Middle-drag to pan, scroll to zoom.</div>
             <div className="tip">Rotate with the arrow buttons in the build bar.</div>
             <div className="tip">Place conveyors then gates; sinks pay on correct outputs.</div>
+            <button className="pill" onClick={resetLevel}>
+              Reset Level
+            </button>
           </div>
         </aside>
 

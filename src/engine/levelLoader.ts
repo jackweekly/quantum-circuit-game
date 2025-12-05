@@ -1,5 +1,6 @@
 import { worldGrid, type Tile } from './grid'
 import { worldItems } from './items'
+import { useGameStore } from '../state/useGameStore'
 
 export interface LevelTile {
   x: number
@@ -33,4 +34,22 @@ export function loadLevel(level: LevelData) {
       locked: t.kind === 'source' || t.kind === 'sink',
     })
   })
+  const store = useGameStore.getState()
+  if (level.goal) {
+    store.setGoalText(level.goal)
+  }
+  if (level.contract) {
+    store.setContract({
+      id: level.contract.id,
+      goal: level.contract.goal,
+      target: level.contract.target,
+      required: level.contract.required,
+      delivered: 0,
+      rewardPerUnit: level.contract.rewardPerUnit,
+      completed: false,
+    })
+  }
+  if (level.availableBuilds) {
+    store.setAvailableBuilds(level.availableBuilds)
+  }
 }

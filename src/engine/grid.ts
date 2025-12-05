@@ -1,6 +1,17 @@
 export type Direction = 'north' | 'south' | 'east' | 'west'
 
-export type TileKind = 'empty' | 'conveyor' | 'printer' | 'linker' | 'sync' | 'scanner' | 'source' | 'sink'
+export type TileKind =
+  | 'empty'
+  | 'conveyor'
+  | 'printer'
+  | 'linker'
+  | 'sync'
+  | 'scanner'
+  | 'source'
+  | 'sink'
+  | 'detector'
+  | 'splitter'
+  | 'merger'
 
 export interface Tile {
   kind: TileKind
@@ -17,6 +28,7 @@ const key = (x: number, y: number) => `${x},${y}`
  */
 export class GridManager {
   private tiles = new Map<string, Tile>()
+  public version = 0
 
   get(x: number, y: number): Tile | undefined {
     return this.tiles.get(key(x, y))
@@ -24,14 +36,17 @@ export class GridManager {
 
   set(x: number, y: number, tile: Tile) {
     this.tiles.set(key(x, y), tile)
+    this.version++
   }
 
   remove(x: number, y: number) {
     this.tiles.delete(key(x, y))
+    this.version++
   }
 
   clear() {
     this.tiles.clear()
+    this.version++
   }
 
   forEach(fn: (pos: { x: number; y: number }, tile: Tile) => void) {

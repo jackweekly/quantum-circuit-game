@@ -138,6 +138,17 @@ export class QuantumSystem {
     return this.vector.length - 1
   }
 
+  collapseToBasis(index: number) {
+    const size = this.vector.length
+    const newVec: Vector = new Array(size).fill(C.zero).map(() => ({ re: 0, im: 0 }))
+    if (index >= 0 && index < size) {
+      newVec[index] = { re: 1, im: 0 }
+    } else {
+      newVec[0] = { re: 1, im: 0 }
+    }
+    this.vector = newVec
+  }
+
   getExcitationProbability(): number {
     let sum = 0
     for (let i = 0; i < this.vector.length; i++) {

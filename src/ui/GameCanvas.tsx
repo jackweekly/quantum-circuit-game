@@ -6,6 +6,8 @@ import {
   Graphics,
   Text,
   TextStyle,
+  Sprite,
+  Texture,
 } from 'pixi.js'
 import { startLoop, stopLoop, onRender } from '../engine/loop'
 import { worldGrid } from '../engine/grid'
@@ -13,6 +15,31 @@ import { useGameStore } from '../state/useGameStore'
 import { worldItems } from '../engine/items'
 
 const CELL_SIZE = 48
+const ITEM_COLORS = {
+  zero: 0x00d2ff,
+  one: 0xbd00ff,
+  super: 0xffffff,
+}
+
+function createGlowTexture(): Texture {
+  const size = 32
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return Texture.WHITE
+  const cx = size / 2
+  const cy = size / 2
+  const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, cx)
+  gradient.addColorStop(0, 'rgba(255,255,255,1)')
+  gradient.addColorStop(0.5, 'rgba(255,255,255,0.7)')
+  gradient.addColorStop(1, 'rgba(255,255,255,0)')
+  ctx.fillStyle = gradient
+  ctx.beginPath()
+  ctx.arc(cx, cy, cx, 0, Math.PI * 2)
+  ctx.fill()
+  return Texture.from(canvas)
+}
 
 export function GameCanvas() {
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -23,6 +50,10 @@ export function GameCanvas() {
   const tileLayerRef = useRef<Container | null>(null)
   const itemLayerRef = useRef<Container | null>(null)
   const ghostLayerRef = useRef<Container | null>(null)
+  const gridGraphicsRef = useRef<Graphics | null>(null)
+  const lastGridVersionRef = useRef<number>(-1)
+  const itemSpritePoolRef = useRef<Map<number, Sprite>>(new Map())
+  const glowTextureRef = useRef<Texture | null>(null)
 
   const isPanning = useRef(false)
   const isDraggingAction = useRef(false)
@@ -42,13 +73,22 @@ export function GameCanvas() {
     const viewport = viewportRef.current
     if (!layer || !viewport) return
 
-    layer.removeChildren()
-    const g = new Graphics()
+    let g = gridGraphicsRef.current
+    if (!g) {
+      g = new Graphics()
+      gridGraphicsRef.current = g
+      layer.addChild(g)
+    }
+    g.clear()
 
-    const startX = Math.floor(-viewport.x / CELL_SIZE) - 1
-    const startY = Math.floor(-viewport.y / CELL_SIZE) - 1
-    const endX = startX + Math.ceil(app.screen.width / CELL_SIZE) + 2
-    const endY = startY + Math.ceil(app.screen.height / CELL_SIZE) + 2
+    const scaleX = viewport.scale.x || 1
+    const scaleY = viewport.scale.y || 1
+    const startX = Math.floor(-viewport.x / CELL_SIZE / scaleX) - 1
+    const startY = Math.floor(-viewport.y / CELL_SIZE / scaleY) - 1
+    const cols = Math.ceil(app.screen.width / CELL_SIZE / scaleX) + 2
+    const rows = Math.ceil(app.screen.height / CELL_SIZE / scaleY) + 2
+    const endX = startX + cols
+    const endY = startY + rows
 
     g.strokeStyle = { width: 1, color: 0xffffff, alpha: 0.08 }
 
@@ -67,6 +107,8 @@ export function GameCanvas() {
   const renderTiles = () => {
     const layer = tileLayerRef.current
     if (!layer) return
+    if (worldGrid.version === lastGridVersionRef.current) return
+    lastGridVersionRef.current = worldGrid.version
     layer.removeChildren()
 
     const labelStyle = new TextStyle({
@@ -119,6 +161,33 @@ export function GameCanvas() {
             layer.addChild(overlay, control, target)
           }
         }
+      } else if (tile.kind === 'detector') {
+        g.rect(2, 2, CELL_SIZE - 4, CELL_SIZE - 4)
+        g.fill(0x9b59ff)
+        g.stroke({ width: 2, color: 0xffffff })
+        const text = new Text({
+          text: 'ME',
+          style: labelStyle,
+        })
+        text.anchor.set(0.5)
+        text.position.set(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE / 2)
+        layer.addChild(g, text)
+      } else if (tile.kind === 'splitter') {
+        g.rect(2, 2, CELL_SIZE - 4, CELL_SIZE - 4)
+        g.fill(0x33ff66)
+        g.stroke({ width: 2, color: 0x6cd0ff })
+        const text = new Text({ text: 'SP', style: labelStyle })
+        text.anchor.set(0.5)
+        text.position.set(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE / 2)
+        layer.addChild(g, text)
+      } else if (tile.kind === 'merger') {
+        g.rect(2, 2, CELL_SIZE - 4, CELL_SIZE - 4)
+        g.fill(0x2a3b55)
+        g.stroke({ width: 2, color: 0x6cd0ff })
+        const text = new Text({ text: 'MG', style: labelStyle })
+        text.anchor.set(0.5)
+        text.position.set(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE / 2)
+        layer.addChild(g, text)
       } else if (tile.kind === 'source') {
         g.rect(4, 4, CELL_SIZE - 8, CELL_SIZE - 8).fill(0xffaa00)
         const arrow = new Graphics()
@@ -142,22 +211,42 @@ export function GameCanvas() {
 
   const renderItems = () => {
     const layer = itemLayerRef.current
-    if (!layer) return
-    layer.removeChildren()
+    const pool = itemSpritePoolRef.current
+    const texture = glowTextureRef.current
+    if (!layer || !texture) return
+    const active = new Set<number>()
 
     for (const item of worldItems.getAll()) {
+      active.add(item.id)
+      let sprite = pool.get(item.id)
+      if (!sprite) {
+        sprite = new Sprite(texture)
+        sprite.anchor.set(0.5)
+        layer.addChild(sprite)
+        pool.set(item.id, sprite)
+      }
       const system = worldItems.systems.get(item.systemId)
       const prob1 = system ? system.getExcitationProbability() : 0
-      let color = 0x6cd0ff
-      if (prob1 > 0.9) color = 0xff00ff
-      else if (prob1 > 0.4) color = 0xffffff
+      let color = ITEM_COLORS.super
+      if (prob1 > 0.9) color = ITEM_COLORS.one
+      else if (prob1 < 0.1) color = ITEM_COLORS.zero
+      sprite.tint = color
+      sprite.x = item.x * CELL_SIZE + CELL_SIZE / 2
+      sprite.y = item.y * CELL_SIZE + CELL_SIZE / 2
+      if (prob1 >= 0.1 && prob1 <= 0.9) {
+        const pulse = Math.sin(performance.now() / 100) * 0.1 + 0.9
+        sprite.alpha = pulse
+      } else {
+        sprite.alpha = 1
+      }
+    }
 
-      const g = new Graphics()
-      g.circle(0, 0, 6)
-      g.fill(color)
-      g.stroke({ width: 2, color: 0xffffff, alpha: 0.5 })
-      g.position.set(item.x * CELL_SIZE + CELL_SIZE / 2, item.y * CELL_SIZE + CELL_SIZE / 2)
-      layer.addChild(g)
+    for (const [id, sprite] of pool.entries()) {
+      if (!active.has(id)) {
+        layer.removeChild(sprite)
+        sprite.destroy()
+        pool.delete(id)
+      }
     }
   }
 
@@ -171,12 +260,27 @@ export function GameCanvas() {
     }
     if (button === 0 && state.interactionMode === 'build' && state.selectedBuildId) {
       buildDirRef.current = state.buildDirection
-      const costMap: Record<string, number> = { conveyor: 1, cnot: 8 }
+      const costMap: Record<string, number> = {
+        conveyor: 1,
+        h: 4,
+        x: 6,
+        z: 6,
+        cnot: 12,
+        detector: 8,
+        splitter: 6,
+        merger: 4,
+      }
       const cost = costMap[state.selectedBuildId] ?? 5
       const ok = state.spendCredits ? state.spendCredits(cost) : true
       if (!ok) return
       if (state.selectedBuildId === 'conveyor') {
         worldGrid.set(gridX, gridY, { kind: 'conveyor', direction: buildDirRef.current })
+      } else if (state.selectedBuildId === 'splitter') {
+        worldGrid.set(gridX, gridY, { kind: 'splitter', direction: buildDirRef.current })
+      } else if (state.selectedBuildId === 'merger') {
+        worldGrid.set(gridX, gridY, { kind: 'merger', direction: buildDirRef.current })
+      } else if (state.selectedBuildId === 'detector') {
+        worldGrid.set(gridX, gridY, { kind: 'detector', direction: buildDirRef.current })
       } else {
         worldGrid.set(gridX, gridY, {
           kind: 'printer',
@@ -214,6 +318,8 @@ export function GameCanvas() {
       appRef.current = app
       containerRef.current?.appendChild(app.canvas)
       app.canvas.addEventListener('contextmenu', (e) => e.preventDefault())
+
+      glowTextureRef.current = createGlowTexture()
 
       const viewport = new Container()
       viewportRef.current = viewport
@@ -321,6 +427,12 @@ export function GameCanvas() {
               text.anchor.set(0.5)
               text.position.set(CELL_SIZE / 2, CELL_SIZE / 2)
               wrapper.addChild(text)
+              if (state.selectedBuildId === 'detector') {
+                const text2 = new Text({ text: 'ME', style: { fontFamily: 'monospace', fontSize: 16, fill: '#fff' } })
+                text2.anchor.set(0.5)
+                text2.position.set(CELL_SIZE / 2, CELL_SIZE / 2 + 12)
+                wrapper.addChild(text2)
+              }
               if (state.selectedBuildId === 'cnot') {
                 const overlay = new Graphics()
                 overlay.lineStyle(2, 0x6cd0ff, 0.5)

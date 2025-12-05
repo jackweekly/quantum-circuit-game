@@ -7,6 +7,9 @@ const COSTS: Record<string, number> = {
   x: 6,
   z: 6,
   cnot: 12,
+  detector: 8,
+  splitter: 6,
+  merger: 4,
 }
 
 export function BuildToolbar() {
