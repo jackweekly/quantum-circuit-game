@@ -27,6 +27,8 @@ export interface GameState {
   credits: number
   contract: Contract | null
   availableBuilds: string[]
+  contracts: Contract[]
+  contractIndex: number
   setMode: (mode: GameMode) => void
   setInteractionMode: (mode: InteractionMode) => void
   setSelectedBuildId: (id: string | null) => void
@@ -43,6 +45,8 @@ export interface GameState {
   resetContractProgress: () => void
   completeContract: () => void
   resetLevel: () => void
+  setContracts: (contracts: Contract[]) => void
+  nextContract: () => void
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -57,6 +61,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   credits: 100,
   contract: null,
   availableBuilds: ['conveyor', 'h', 'x', 'z', 'cnot'],
+  contracts: [],
+  contractIndex: 0,
   setMode: (mode) => set({ mode }),
   setInteractionMode: (mode) => set({ interactionMode: mode }),
   setSelectedBuildId: (id) =>
@@ -97,11 +103,24 @@ export const useGameStore = create<GameState>((set, get) => ({
     }),
   resetLevel: () =>
     set((state) => ({
-      contract: state.contract
-        ? { ...state.contract, delivered: 0, completed: false }
-        : null,
+      contract: state.contract ? { ...state.contract, delivered: 0, completed: false } : null,
       credits: 100,
       score: 0,
       tick: 0,
     })),
+  setContracts: (contracts) =>
+    set({
+      contracts,
+      contractIndex: 0,
+      contract: contracts[0] || null,
+    }),
+  nextContract: () =>
+    set((state) => {
+      const nextIndex = state.contractIndex + 1
+      if (nextIndex >= state.contracts.length) return state
+      return {
+        contractIndex: nextIndex,
+        contract: { ...state.contracts[nextIndex], delivered: 0, completed: false },
+      }
+    }),
 }))

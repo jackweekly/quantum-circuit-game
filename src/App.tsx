@@ -1,9 +1,9 @@
 import './App.css'
+import { useEffect } from 'react'
 import { GameCanvas } from './ui/GameCanvas'
 import { BuildToolbar } from './ui/hud/BuildToolbar'
 import { Inspector } from './ui/hud/Inspector'
 import { useGameStore } from './state/useGameStore'
-import { useEffect } from 'react'
 import { loadLevel, type LevelTile } from './engine/levelLoader'
 import campaign from './content/campaign.json'
 
@@ -13,78 +13,60 @@ function App() {
   const goal = useGameStore((s) => s.goal)
   const credits = useGameStore((s) => s.credits)
   const contract = useGameStore((s) => s.contract)
-  const setContract = useGameStore((s) => s.setContract)
+  const contractCompleted = useGameStore((s) => s.contract?.completed)
+  const contracts = useGameStore((s) => s.contracts)
+  const contractIndex = useGameStore((s) => s.contractIndex)
+
   const setGoalText = useGameStore((s) => s.setGoalText)
   const setAvailableBuilds = useGameStore((s) => s.setAvailableBuilds)
+  const setContracts = useGameStore((s) => s.setContracts)
+  const nextContract = useGameStore((s) => s.nextContract)
   const resetLevel = useGameStore((s) => s.resetLevel)
-  const contractCompleted = useGameStore((s) => s.contract?.completed)
+  const setContract = useGameStore((s) => s.setContract)
 
   const chapter = campaign.chapters?.[0]
-  useEffect(() => {
-    if (chapter) {
-      const layout = (chapter.layout as LevelTile[] | undefined) || []
-      const firstContract = chapter.contracts?.[0] as
-        | (typeof chapter.contracts)[0] & {
-            target?: 'zero' | 'one' | 'plus'
-            required?: number
-            rewardPerUnit?: number
-          }
-        | undefined
-      loadLevel({
-        layout,
-        goal: firstContract?.goal,
-        contract: firstContract
-          ? {
-              id: firstContract.id,
-              goal: firstContract.goal,
-              target: firstContract.target || 'one',
-              required: firstContract.required || 5,
-              rewardPerUnit: firstContract.rewardPerUnit || 5,
-            }
-          : undefined,
-      })
-      if (firstContract?.goal) setGoalText(firstContract.goal)
-      if (firstContract) {
-        setContract({
-          id: firstContract.id,
-          goal: firstContract.goal,
-          target: firstContract.target || 'one',
-          required: firstContract.required || 5,
-          delivered: 0,
-          rewardPerUnit: firstContract.rewardPerUnit || 5,
-        })
-      }
-      if (Array.isArray(chapter.availableBuilds)) {
-        setAvailableBuilds(chapter.availableBuilds)
-      }
-    }
-  }, [setContract, setGoalText, setAvailableBuilds])
 
-  const handleNextLevel = () => {
-    if (chapter) {
-      resetLevel()
-      const layout = (chapter.layout as LevelTile[] | undefined) || []
-      const firstContract = chapter.contracts?.[0] as
-        | (typeof chapter.contracts)[0] & {
-            target?: 'zero' | 'one' | 'plus'
-            required?: number
-            rewardPerUnit?: number
-          }
-        | undefined
+  useEffect(() => {
+    if (!chapter) return
+    const layout = (chapter.layout as LevelTile[] | undefined) || []
+    const contractsList =
+      chapter.contracts?.map((c) => ({
+        id: c.id,
+        goal: c.goal,
+        target: (c as any).target || 'one',
+        required: (c as any).required || 5,
+        delivered: 0,
+        rewardPerUnit: (c as any).rewardPerUnit || 5,
+        completed: false,
+      })) || []
+
+    loadLevel({
+      layout,
+      goal: contractsList[0]?.goal,
+      contract: contractsList[0],
+      availableBuilds: chapter.availableBuilds as string[] | undefined,
+    })
+    setContracts(contractsList)
+    if (contractsList[0]?.goal) setGoalText(contractsList[0].goal)
+    if (Array.isArray(chapter.availableBuilds)) {
+      setAvailableBuilds(chapter.availableBuilds)
+    }
+  }, [chapter, setAvailableBuilds, setContracts, setGoalText])
+
+  const handleNextContract = () => {
+    if (!chapter) return
+    resetLevel()
+    const layout = (chapter.layout as LevelTile[] | undefined) || []
+    const next = contracts[contractIndex + 1]
+    if (next) {
       loadLevel({
         layout,
-        goal: firstContract?.goal,
-        contract: firstContract
-          ? {
-              id: firstContract.id,
-              goal: firstContract.goal,
-              target: firstContract.target || 'one',
-              required: firstContract.required || 5,
-              rewardPerUnit: firstContract.rewardPerUnit || 5,
-            }
-          : undefined,
+        goal: next.goal,
+        contract: next,
         availableBuilds: chapter.availableBuilds as string[] | undefined,
       })
+      setContract({ ...next, delivered: 0, completed: false })
+      nextContract()
     }
   }
 
@@ -152,11 +134,19 @@ function App() {
         <div className="modal">
           <div className="modal-content">
             <h2>Contract Complete</h2>
-            <p>Great work. Ready for the next job?</p>
+            <p>
+              {contractIndex + 1 < contracts.length ? 'Great work. Next contract?' : 'All contracts complete.'}
+            </p>
             <div className="button-row">
-              <button className="btn" onClick={handleNextLevel}>
-                Reload Level
-              </button>
+              {contractIndex + 1 < contracts.length ? (
+                <button className="btn" onClick={handleNextContract}>
+                  Next Contract
+                </button>
+              ) : (
+                <button className="btn" onClick={resetLevel}>
+                  Replay
+                </button>
+              )}
             </div>
           </div>
         </div>
