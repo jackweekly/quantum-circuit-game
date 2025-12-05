@@ -17,9 +17,10 @@ function App() {
   const setGoalText = useGameStore((s) => s.setGoalText)
   const setAvailableBuilds = useGameStore((s) => s.setAvailableBuilds)
   const resetLevel = useGameStore((s) => s.resetLevel)
+  const contractCompleted = useGameStore((s) => s.contract?.completed)
 
+  const chapter = campaign.chapters?.[0]
   useEffect(() => {
-    const chapter = campaign.chapters?.[0]
     if (chapter) {
       const layout = (chapter.layout as LevelTile[] | undefined) || []
       const firstContract = chapter.contracts?.[0] as
@@ -58,6 +59,34 @@ function App() {
       }
     }
   }, [setContract, setGoalText, setAvailableBuilds])
+
+  const handleNextLevel = () => {
+    if (chapter) {
+      resetLevel()
+      const layout = (chapter.layout as LevelTile[] | undefined) || []
+      const firstContract = chapter.contracts?.[0] as
+        | (typeof chapter.contracts)[0] & {
+            target?: 'zero' | 'one' | 'plus'
+            required?: number
+            rewardPerUnit?: number
+          }
+        | undefined
+      loadLevel({
+        layout,
+        goal: firstContract?.goal,
+        contract: firstContract
+          ? {
+              id: firstContract.id,
+              goal: firstContract.goal,
+              target: firstContract.target || 'one',
+              required: firstContract.required || 5,
+              rewardPerUnit: firstContract.rewardPerUnit || 5,
+            }
+          : undefined,
+        availableBuilds: chapter.availableBuilds as string[] | undefined,
+      })
+    }
+  }
 
   return (
     <div className="shell">
@@ -118,6 +147,20 @@ function App() {
           <Inspector />
         </section>
       </main>
+
+      {contractCompleted && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>Contract Complete</h2>
+            <p>Great work. Ready for the next job?</p>
+            <div className="button-row">
+              <button className="btn" onClick={handleNextLevel}>
+                Reload Level
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

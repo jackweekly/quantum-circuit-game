@@ -36,6 +36,14 @@ class ItemManager {
     return this.items.values()
   }
 
+  getOccupancySnapshot(): Map<string, number> {
+    const snap = new Map<string, number>()
+    for (const [key, ids] of this.occupancy.entries()) {
+      snap.set(key, ids.length)
+    }
+    return snap
+  }
+
   getItemsAt(gridX: number, gridY: number): Item[] {
     const result: Item[] = []
     for (const item of this.items.values()) {

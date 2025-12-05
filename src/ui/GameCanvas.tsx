@@ -54,6 +54,7 @@ export function GameCanvas() {
   const lastGridVersionRef = useRef<number>(-1)
   const itemSpritePoolRef = useRef<Map<number, Sprite>>(new Map())
   const glowTextureRef = useRef<Texture | null>(null)
+  const occupancySnapshotRef = useRef<Map<string, number>>(new Map())
 
   const isPanning = useRef(false)
   const isDraggingAction = useRef(false)
@@ -117,6 +118,7 @@ export function GameCanvas() {
       fontWeight: 'bold',
       fill: '#ffffff',
     })
+    const occ = occupancySnapshotRef.current
 
     worldGrid.forEach(({ x, y }, tile) => {
       const g = new Graphics()
@@ -134,6 +136,13 @@ export function GameCanvas() {
         g.position.set(x * CELL_SIZE, y * CELL_SIZE)
         layer.addChild(g)
         layer.addChild(arrow)
+        const key = `${x},${y}`
+        if (occ.get(key) && (occ.get(key) ?? 0) > 1) {
+          const warning = new Graphics()
+          warning.rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+          warning.stroke({ width: 2, color: 0xff5555, alpha: 0.8 })
+          layer.addChild(warning)
+        }
       } else if (tile.kind === 'printer') {
         g.position.set(x * CELL_SIZE, y * CELL_SIZE)
         drawGateSprite(g, tile.gateId, CELL_SIZE)
@@ -179,7 +188,14 @@ export function GameCanvas() {
         const text = new Text({ text: 'SP', style: labelStyle })
         text.anchor.set(0.5)
         text.position.set(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE / 2)
+        const arrows = new Graphics()
+        arrows.lineStyle(2, 0xffffff, 0.7)
+        arrows.moveTo(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE / 2)
+        arrows.lineTo(x * CELL_SIZE + CELL_SIZE - 6, y * CELL_SIZE + CELL_SIZE / 2 - 8)
+        arrows.moveTo(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE / 2)
+        arrows.lineTo(x * CELL_SIZE + CELL_SIZE - 6, y * CELL_SIZE + CELL_SIZE / 2 + 8)
         layer.addChild(g, text)
+        layer.addChild(arrows)
       } else if (tile.kind === 'merger') {
         g.rect(2, 2, CELL_SIZE - 4, CELL_SIZE - 4)
         g.fill(0x2a3b55)
@@ -187,7 +203,13 @@ export function GameCanvas() {
         const text = new Text({ text: 'MG', style: labelStyle })
         text.anchor.set(0.5)
         text.position.set(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE / 2)
-        layer.addChild(g, text)
+        const arrows = new Graphics()
+        arrows.lineStyle(2, 0xffffff, 0.7)
+        arrows.moveTo(x * CELL_SIZE + 6, y * CELL_SIZE + CELL_SIZE / 2 - 8)
+        arrows.lineTo(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE / 2)
+        arrows.moveTo(x * CELL_SIZE + 6, y * CELL_SIZE + CELL_SIZE / 2 + 8)
+        arrows.lineTo(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE / 2)
+        layer.addChild(g, text, arrows)
       } else if (tile.kind === 'source') {
         g.rect(4, 4, CELL_SIZE - 8, CELL_SIZE - 8).fill(0xffaa00)
         const arrow = new Graphics()
@@ -214,6 +236,7 @@ export function GameCanvas() {
     const pool = itemSpritePoolRef.current
     const texture = glowTextureRef.current
     if (!layer || !texture) return
+    occupancySnapshotRef.current = worldItems.getOccupancySnapshot()
     const active = new Set<number>()
 
     for (const item of worldItems.getAll()) {
